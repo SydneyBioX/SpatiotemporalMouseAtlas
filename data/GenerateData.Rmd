@@ -1,0 +1,175 @@
+---
+title: "Generate shiny input files"
+author: "Shila Ghazanfar"
+date: "01/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+library(ComplexHeatmap)
+library(ggplot2)
+library(ggrepel)
+library(GGally)
+library(limma)
+library(patchwork)
+library(reshape)
+library(gtools)
+library(scattermore)
+library(gganimate)
+library(ggmap)
+library(randomForest)
+library(igraph)
+library(cowplot)
+library(ggpubr)
+library(Matrix)
+library(grDevices)
+library(reshape)
+library(tidyverse)
+
+source("../celltype_colours.R")
+```
+
+# Summary
+
+The idea here is to generate the input files necessary for the shiny app, 
+to avoid having to unnecessarily repeat various functions, and so that we do not
+require a latest version of SingleCellExperiment
+
+# Load data objects
+
+```{r}
+
+seqFishSPE = readRDS("seqFISH_spe.Rds")
+
+
+# Refined SeqFISH data <- this is the way
+
+# No need to show. seqfish clustering on its own, IGNORE for now
+cellTypeSeqFISH = readRDS("seqFISH_celltype.Rds") %>%
+  rownames_to_column("cellID")
+
+
+# Using atlas labels on the seqFISH data
+cellTypeExtended = readRDS("extended_atlas_celltype.Rds") %>% 
+  rownames_to_column("cellID")
+
+# APDV data
+apdv = readRDS("AP_DV.Rds") %>% 
+  rownames_to_column("cellID")
+```
+
+
+# Combining seqFISH data
+```{r}
+colDat = seqFishSPE %>% 
+  colData() %>% 
+  data.frame() %>% 
+  rownames_to_column("cellID")
+
+finalColDat = colDat %>% 
+  left_join(cellTypeExtended, join_by("cellID")) %>% 
+  left_join(apdv, join_by("cellID")) %>% 
+  column_to_rownames("cellID") %>%
+  mutate(extended_atlas_celltype = case_when(
+    extended_atlas_celltype == "low quality" ~ "Low quality",
+    TRUE ~ extended_atlas_celltype
+  )) %>% 
+  DataFrame()
+
+
+colData(seqFishSPE) = finalColDat
+
+saveRDS(seqFishSPE, "seqFISH_spe_final.Rds")
+```
+
+# Generate legend ggplots for app
+
+```{r}
+seqFISH_spe = readRDS("seqFISH_spe_final.Rds")
+
+g_leg_list = list()
+
+########## 
+
+for (ttl in c("Imputed gene expression", "Batch-corrected gene expression")) {
+
+# get the legend
+pc_df = data.frame(Expression = 1:10)
+
+g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) + 
+    geom_point(aes(colour = Expression)) + 
+    theme_transparent() + 
+    # scale_colour_gradient(low = "yellow", high = "red",
+    scale_colour_gradientn(
+        colours = c("grey85","cornflowerblue", "black"),
+        labels = c("Low", "High"), 
+        breaks = range(pc_df$Expression),
+        limits = range(pc_df$Expression)) + 
+    theme(legend.position = "bottom") +
+    theme(legend.text = element_text(size = 10),
+          legend.title = element_text(size = 15)) +
+    # theme(legend.key.width = unit(1, "inches")) +
+    # theme(legend.key.height = unit(0.5, "inches")) +
+    guides(color = guide_colourbar(title.position = "top",
+                                   title.hjust = 0.5,
+                                   ticks = FALSE,
+                                   # title = input$colour_by,
+                                   title = ttl,
+                                   barwidth = unit(1.5, "strwidth",
+                                                   # data = input$colour_by
+                                                   data = ttl
+                                   ))) +
+    NULL
+
+g_leg = as_ggplot(get_legend(g_leg_raw))
+g_leg_list[[ttl]] <- g_leg
+
+}
+
+
+##########
+
+ttl = "Mapped cell type"
+
+# get the legend
+pc_df = data.frame(Expression = seqFISH_spe$extended_atlas_celltype)
+
+g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) +
+    geom_point(aes(colour = Expression), size = 5) +
+    theme_transparent() +
+    # scale_colour_gradient(low = "yellow", high = "red",
+    # scale_colour_gradientn(
+    #     colours = colours,
+    #     labels = c("Low", "High"),
+    #     breaks = range(pc_df$Expression),
+    #     limits = range(pc_df$Expression))+
+    scale_colour_manual(values = celltype_colours) +
+    theme(legend.position = "bottom") +
+    theme(legend.text = element_text(size = 15),
+          legend.title = element_text(size = 20)) +
+    # theme(legend.key.width = unit(1, "inches")) +
+    # theme(legend.key.height = unit(0.5, "inches")) +
+    guides(color = guide_legend(title.position = "top",
+                                title.hjust = 0.5,
+                                ticks = FALSE,
+                                title = ttl)) +
+    NULL
+
+g_leg = as_ggplot(get_legend(g_leg_raw))
+g_leg_list[[ttl]] <- g_leg
+
+saveRDS(g_leg_list, "g_leg_list.Rds")
+
+```
+
+```{r}
+sessionInfo()
+```
