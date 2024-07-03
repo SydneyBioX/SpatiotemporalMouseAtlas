@@ -305,6 +305,13 @@ shinyUI(fluidPage(
                                                        max = 1.5,
                                                        value = 1,
                                                        step = 0.1),
+                                          
+                                          sliderInput('dissectionStrokeSize',
+                                                      "Selected outline width",
+                                                      min = 0.05,
+                                                      max = 0.5,
+                                                      value = 0.3,
+                                                      step = 0.05),
                                            
                                            HTML("<p style=\"margin-bottom:1cm;\"> </p>"),
                                            

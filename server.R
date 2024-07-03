@@ -705,7 +705,7 @@ shinyServer(function(input, output, session) {
           geom_point_interactive( aes(colour = selected, fill = uniqueID),
                                   shape = 21,
                                   size = input$dissectionPointSize,
-                                  stroke = 0.3) +
+                                  stroke = input$dissectionStrokeSize) +
           scale_colour_manual(values = c("Group A" = "red",
                                          "Unselected" = alpha("grey", 0.0),
                                          "Group B" = "blue"),
@@ -743,6 +743,7 @@ shinyServer(function(input, output, session) {
             input$remove,
             input$removeAll,
             input$dissectionPointSize,
+            input$dissectionStrokeSize,
             input$virtualDissectionCelltypes,
             input$addCT,
             input$addCT2,
