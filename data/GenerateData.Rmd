@@ -1,7 +1,7 @@
 ---
 title: "Generate shiny input files"
-author: "Shila Ghazanfar"
-date: "01/03/2021"
+author: "Farhan Ameen and Shila Ghazanfar"
+date: "08/07/2024"
 output: html_document
 ---
 
@@ -33,6 +33,7 @@ library(Matrix)
 library(grDevices)
 library(reshape)
 library(tidyverse)
+library(HDF5Array)
 
 source("../celltype_colours.R")
 ```
@@ -55,12 +56,12 @@ seqFishSPE = readRDS("seqFISH_spe.Rds")
 # load updated metadata
 metadata = readRDS("seqFISH_metadata_4_7_2024.rds")
 cellTypeRefined = metadata[,"refined_annotation", drop = FALSE] %>%
-    rownames_to_column("cellID")
+  rownames_to_column("cellID")
 
 # No need to show. seqfish clustering on its own, IGNORE for now
 # if (FALSE) {
-  cellTypeSeqFISH = readRDS("seqFISH_celltype.Rds") %>%
-    rownames_to_column("cellID")
+cellTypeSeqFISH = readRDS("seqFISH_celltype.Rds") %>%
+  rownames_to_column("cellID")
 # }
 
 # Using atlas labels on the seqFISH data
@@ -112,19 +113,19 @@ g_leg_list = list()
 ########## 
 
 for (ttl in c("Imputed gene expression", "Batch-corrected gene expression")) {
-
-# get the legend
-pc_df = data.frame(Expression = 1:10)
-
-g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) + 
+  
+  # get the legend
+  pc_df = data.frame(Expression = 1:10)
+  
+  g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) + 
     geom_point(aes(colour = Expression)) + 
     theme_transparent() + 
     # scale_colour_gradient(low = "yellow", high = "red",
     scale_colour_gradientn(
-        colours = c("grey85","cornflowerblue", "black"),
-        labels = c("Low", "High"), 
-        breaks = range(pc_df$Expression),
-        limits = range(pc_df$Expression)) + 
+      colours = c("grey85","cornflowerblue", "black"),
+      labels = c("Low", "High"), 
+      breaks = range(pc_df$Expression),
+      limits = range(pc_df$Expression)) + 
     theme(legend.position = "bottom") +
     theme(legend.text = element_text(size = 10),
           legend.title = element_text(size = 15)) +
@@ -140,10 +141,10 @@ g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) +
                                                    data = ttl
                                    ))) +
     NULL
-
-g_leg = as_ggplot(get_legend(g_leg_raw))
-g_leg_list[[ttl]] <- g_leg
-
+  
+  g_leg = as_ggplot(get_legend(g_leg_raw))
+  g_leg_list[[ttl]] <- g_leg
+  
 }
 
 
@@ -156,25 +157,25 @@ ttl = "Mapped cell type"
 pc_df = data.frame(Expression = seqFISH_spe$refined_annotation)
 
 g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) +
-    geom_point(aes(colour = Expression), size = 5) +
-    theme_transparent() +
-    # scale_colour_gradient(low = "yellow", high = "red",
-    # scale_colour_gradientn(
-    #     colours = colours,
-    #     labels = c("Low", "High"),
-    #     breaks = range(pc_df$Expression),
-    #     limits = range(pc_df$Expression))+
-    scale_colour_manual(values = celltype_colours) +
-    theme(legend.position = "bottom") +
-    theme(legend.text = element_text(size = 15),
-          legend.title = element_text(size = 20)) +
-    # theme(legend.key.width = unit(1, "inches")) +
-    # theme(legend.key.height = unit(0.5, "inches")) +
-    guides(color = guide_legend(title.position = "top",
-                                title.hjust = 0.5,
-                                ticks = FALSE,
-                                title = ttl)) +
-    NULL
+  geom_point(aes(colour = Expression), size = 5) +
+  theme_transparent() +
+  # scale_colour_gradient(low = "yellow", high = "red",
+  # scale_colour_gradientn(
+  #     colours = colours,
+  #     labels = c("Low", "High"),
+  #     breaks = range(pc_df$Expression),
+  #     limits = range(pc_df$Expression))+
+  scale_colour_manual(values = celltype_colours) +
+  theme(legend.position = "bottom") +
+  theme(legend.text = element_text(size = 15),
+        legend.title = element_text(size = 20)) +
+  # theme(legend.key.width = unit(1, "inches")) +
+  # theme(legend.key.height = unit(0.5, "inches")) +
+  guides(color = guide_legend(title.position = "top",
+                              title.hjust = 0.5,
+                              ticks = FALSE,
+                              title = ttl)) +
+  NULL
 
 g_leg = as_ggplot(get_legend(g_leg_raw))
 g_leg_list[[ttl]] <- g_leg
@@ -182,6 +183,46 @@ g_leg_list[[ttl]] <- g_leg
 saveRDS(g_leg_list, "g_leg_list.Rds")
 
 ```
+
+# generate files for imputed gene expression
+
+```{r}
+# this takes about 30 minutes to run!!
+
+if (FALSE) {
+  saveRDS(rownames(finalColDat), file = "combined_cnames.Rds")
+  
+  imputed_files = c("seqFISH_e6_postQC_imputed_RNA.Rds",
+                    "seqFISH_e7_postQC_imputed_RNA.Rds",
+                    "seqFISH_e8_embryo1_postQC_imputed_RNA.Rds",
+                    "seqFISH_e8_embryo2_postQC_imputed_RNA.Rds",
+                    "seqFISH_e8_embryo3_postQC_imputed_RNA.Rds")
+  
+  imp_all = sapply(imputed_files, function(file) {
+    readRDS(file)[[1]]
+  }, simplify = FALSE)
+  
+  # check the rownames all match
+  lapply(imp_all, function(x) identical(rownames(x), rownames(imp_all[[1]])))
+  
+  # check the colnames are all there
+  lapply(imp_all, function(x) all(colnames(x) %in% rownames(finalColDat)))
+  
+  # check there are no colnames that shouldnt be there - should be all FALSE
+  lapply(imp_all, function(x) any(!colnames(x) %in% rownames(finalColDat)))
+  
+  # combine them via cbind
+  imp_combined = do.call(cbind, imp_all)
+  
+  # save out the rownames
+  saveRDS(rownames(imp_combined), file = "combined_rnames.Rds")
+  
+  # save out the data matrix
+  # this step takes about 30 minutes !!
+  writeHDF5Array(imp_combined, filepath="combined_compressed.h5", name="logcounts", H5type="H5T_IEEE_F32LE", level=9)
+}
+```
+
 
 ```{r}
 sessionInfo()

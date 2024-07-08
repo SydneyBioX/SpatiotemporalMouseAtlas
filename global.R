@@ -59,10 +59,10 @@ embryo_coords_range_y = range(meta$dim2, na.rm = TRUE)
 
 
 # commented may 2024
-# file_combined = "data/combined_compressed.h5"
-# cnames = readRDS("data/combined_cnames.Rds")
-# rnames = readRDS("data/combined_rnames.Rds")
-# genes_imp = rnames
+file_combined = "data/combined_compressed.h5"
+cnames = readRDS("data/combined_cnames.Rds")
+rnames = readRDS("data/combined_rnames.Rds")
+genes_imp = rnames
 
 
 ## TEST UMAPDATA, MUST REMOVE
@@ -137,17 +137,15 @@ add_exprs = function() {
 }
 
 # commented out may 2024, dont have imputed data yet.
-# add_imp = function() {
-#     if (!"imp" %in% ls(envir = .GlobalEnv)) {
-#         showNotification("loading imputed data...")
-#         imp <<- HDF5Array(filepath = file_combined, name = "logcounts")
-#         rownames(imp) <<- rnames
-#         colnames(imp) <<- cnames
-#         showNotification("loading imputed data... done!")
-#     }
-# 
-# 
-# }
+add_imp = function() {
+    if (!"imp" %in% ls(envir = .GlobalEnv)) {
+        showNotification("loading imputed data...")
+        imp <<- HDF5Array(filepath = file_combined, name = "logcounts")
+        rownames(imp) <<- rnames
+        colnames(imp) <<- cnames
+        showNotification("loading imputed data... done!")
+    }
+}
 
 add_exprs_norm = function() {
     if (!"exprs_norm" %in% ls(envir = .GlobalEnv)) {

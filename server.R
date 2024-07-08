@@ -126,8 +126,10 @@ shinyServer(function(input, output, session) {
     
     if(input$celltype_subset_all) {
       celltype_subset = celltypes
+      celltype_subset_imp = celltypes
     } else {
       celltype_subset = input$celltype_subset
+      celltype_subset_imp = input$celltype_subset_imp
     }
     
     # subset further (need to update this)
@@ -163,8 +165,8 @@ shinyServer(function(input, output, session) {
     # }
     
     g <- g + 
-      scale_fill_manual(values = pc_cols) +
-      scale_colour_manual(values = pc_cols) +
+      scale_fill_manual(values = pc_cols, na.value = NA) +
+      scale_colour_manual(values = pc_cols, na.value = NA) +
       theme_classic() +
       coord_fixed() +
       xlab("") +
@@ -671,6 +673,8 @@ shinyServer(function(input, output, session) {
                      # tooltip = uniqueID,
                      tooltip = cellType,
                      data_id = uniqueID))
+      
+      g <- g + geom_point(data = meta, colour = "grey95", size = 0.8, alpha = 1, show.legend = FALSE)
     }
     
     
@@ -750,6 +754,7 @@ shinyServer(function(input, output, session) {
           input$addCT,
           input$addCT2,
           input$removeCT,
+          input$removeAllButCT,
           input$addLogical,
           input$addLogical2,
           input$removeLogical,
@@ -889,6 +894,23 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$removeCT, {
     removeCTGenerator()
+  })
+  
+  
+  removeAllButCTGenerator = function() {
+    meta2 <- isolate(values$meta)
+    selectedUniqueIDs = subset(meta2,
+                                 embryo %in% input$embryo_subset &
+                                 !(cellType %in% input$virtualDissectionCelltypes)
+    )[,"uniqueID"]
+    meta2[meta2$uniqueID %in% selectedUniqueIDs, "selected"] <- "Unselected"
+    values$meta <<- meta2
+    showNotification("All but selected cell type cells removed from either group!")
+    return(meta)
+  }
+  
+  observeEvent(input$removeAllButCT, {
+    removeAllButCTGenerator()
   })
   
   ######### CT end

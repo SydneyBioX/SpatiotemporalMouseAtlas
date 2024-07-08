@@ -77,10 +77,10 @@ shinyUI(fluidPage(
                                            
                                            sliderInput('spatialPlotPointSize',
                                                        "Point size",
-                                                       min = 0.1,
+                                                       min = 0.05,
                                                        max = 1.5,
                                                        value = 0.3,
-                                                       step = 0.1),
+                                                       step = 0.05),
                                            
                                     ),
                                     
@@ -114,8 +114,12 @@ shinyUI(fluidPage(
                                            textOutput("gene_name_imp_parse_status",
                                                       inline = TRUE),
                                            
+                                           checkboxInput("celltype_subset_all",
+                                                         "Show all cell types",
+                                                         value = TRUE),
+                                           
                                            selectizeInput("celltype_subset_imp",
-                                                          "Subset by mapped cell type:",
+                                                          "Subset by cell type:",
                                                           choices = celltypes,
                                                           selected = NULL,
                                                           multiple = TRUE)
@@ -123,7 +127,7 @@ shinyUI(fluidPage(
                                     
                                     column(10,
                                                
-                                               HTML("<p style=\"text-align: center;\"><em>Plot of imputed spatial expression, and distribution of imputed expression per cell type (below). Check option on left panel for plot of cells' segmentation.</em></p>"),
+                                               HTML("<p style=\"text-align: center;\"><em>Failed QC cells are removed here. Plot of imputed spatial expression, and distribution of imputed expression per cell type (below). Check option on left panel for plot of cells' segmentation.</em></p>"),
                                                
                                                girafeOutput("spatialPlot_imp",
                                                             height = "900px",
@@ -257,9 +261,7 @@ shinyUI(fluidPage(
                                            
                                            selectizeInput('virtualdissect_choice',
                                                           'Virtually dissect using...',
-                                                          # "Joint subclusters",
                                                           choices = c("Physical", "UMAP"),
-                                                          # choices = jointsubclusters,
                                                           selected = "Physical",
                                                           multiple = FALSE),
                                                   
@@ -342,6 +344,14 @@ shinyUI(fluidPage(
                                            
                                            HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
                                            
+                                          
+                                          actionButton("removeAllButCT", "Remove all except listed cell types from either Group",
+                                                       width = "100%",
+                                                       class = "flexibleActionButton",
+                                                       style="font-size:12px"),
+                                          
+                                          HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
+                                          
                                            
                                            textInput("logical",
                                                      "Advanced use: logical statement to select cells",
@@ -383,7 +393,7 @@ shinyUI(fluidPage(
                                            
                                            HTML("<p style=\"margin-bottom:1cm;\"> </p>"),
                                            
-                                           HTML("You can upload multiple cell pre-selection files. Once uploaded press \"Add pre-selected\" to either Group, and then \"Load/Reload plot\"."),
+                                           HTML("You can upload multiple cell pre-selection files. Once uploaded press \"Add pre-selected\" to either Group."),
                                            
                                            fileInput("preselected", "Upload pre-selected cells",
                                                      multiple = TRUE,
@@ -411,7 +421,7 @@ shinyUI(fluidPage(
                                     
                                     # Show a plot of the generated distribution
                                     column(10,
-                                               HTML("<p style=\"text-align: center;\"><em>Please press the \"Reload plot\" button to start and to update after cell additions or removals. Use the lasso selection icon (leftmost in the topright corner) to select cells, then click each button to assign them to a group. Once you have selected two groups, an MA-plot will appear below.</em></p>"),
+                                               HTML("<p style=\"text-align: center;\"><em>Use the lasso selection icon (above the plot) to select cells, then click each button to assign them to a group. Once you have selected two groups, an MA-plot will appear below.</em></p>"),
                                                
                                            fluidRow(
                                              actionButton("removeAll",
