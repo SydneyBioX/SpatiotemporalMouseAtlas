@@ -41,14 +41,16 @@ meta = seqFISH_spe %>%
   data.frame()
 
 # Creating cell type column
-meta$cellType = meta$extended_atlas_celltype
-celltypes = unique(meta$extended_atlas_celltype)
+# meta$cellType = meta$extended_atlas_celltype
+# celltypes = unique(meta$extended_atlas_celltype)
+meta$cellType = meta$refined_annotation
+celltypes = sort(unique(meta$refined_annotation))
 
 meta$uniqueID = rownames(meta)
 meta$selected = factor("Unselected", levels = c("Group A", "Group B", "Unselected"))
 
 
-genes = rownames(seqFISH_spe)
+genes = sort(rownames(seqFISH_spe))
 embryos = paste0("embryo", 1:7)
 # zvals = c(2,5)
 
@@ -64,9 +66,12 @@ embryo_coords_range_y = range(meta$dim2, na.rm = TRUE)
 
 
 ## TEST UMAPDATA, MUST REMOVE
-set.seed(10)
-meta$UMAP1 = rnorm(length(meta$dim1))
-meta$UMAP2 = rnorm(length(meta$dim1))
+# set.seed(10)
+# meta$UMAP1 = rnorm(length(meta$dim1))
+# meta$UMAP2 = rnorm(length(meta$dim1))
+meta$UMAP1 = meta$UMAP_1
+meta$UMAP2 = meta$UMAP_2
+
 
 ##################
 

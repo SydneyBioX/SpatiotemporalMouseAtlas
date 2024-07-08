@@ -1,68 +1,105 @@
-celltype_colours = c("Epiblast" = "#635547",
-                     "Primitive Streak" = "#DABE99",
-                     "Caudal epiblast" = "#9e6762",
-                     
-                     "PGC" = "#FACB12",
-                     
-                     "Anterior Primitive Streak" = "#c19f70",
-                     "Notochord" = "#0F4A9C",
-                     "Def. endoderm" = "#F397C0",
-                     "Definitive endoderm" = "#F397C0",
-                     "Gut" = "#EF5A9D",
-                     "Gut tube" = "#EF5A9D",
-                     
-                     "Nascent mesoderm" = "#C594BF",
-                     "Mixed mesoderm" = "#DFCDE4",
-                     "Intermediate mesoderm" = "#139992",
-                     "Caudal Mesoderm" = "#3F84AA",
-                     "Paraxial mesoderm" = "#8DB5CE",
-                     "Somitic mesoderm" = "#005579",
-                     "Pharyngeal mesoderm" = "#C9EBFB",
-                     "Splanchnic mesoderm" = "#C9EBFB",
-                     "Cardiomyocytes" = "#B51D8D",
-                     "Allantois" = "#532C8A",
-                     "ExE mesoderm" = "#8870ad",
-                     "Lateral plate mesoderm" = "#8870ad",
-                     "Mesenchyme" = "#cc7818",
-                     "Mixed mesenchymal mesoderm" = "#cc7818",
-                     
-                     "Haematoendothelial progenitors" = "#FBBE92",
-                     "Endothelium" = "#ff891c",
-                     "Blood progenitors 1" = "#f9decf",
-                     "Blood progenitors 2" = "#c9a997",
-                     
-                     "Erythroid1" = "#C72228",
-                     "Erythroid2" = "#f79083",
-                     "Erythroid3" = "#EF4E22",
-                     
-                     "Erythroid" = "#f79083",
-                     "Blood progenitors" = "#f9decf",
-                     
-                     "NMP" = "#8EC792",
-                     
-                     "Rostral neurectoderm" = "#65A83E",
-                     "Caudal neurectoderm" = "#354E23",
-                     "Neural crest" = "#C3C388",
-                     "Forebrain/Midbrain/Hindbrain" = "#647a4f",
-                     "Spinal cord" = "#CDE088",
-                     
-                     "Surface ectoderm" = "#f7f79e",
-                     
-                     "Visceral endoderm" = "#F6BFCB",
-                     "ExE endoderm" = "#7F6874",
-                     "ExE ectoderm" = "#989898",
-                     "Parietal endoderm" = "#1A1A1A",
-                     
-                     "Unknown" = "#FFFFFF",
-                     "Low quality" = "#e6e6e6",
-                     
-                     # somitic and paraxial types
-                     # colour from T chimera paper submission
-                     "Cranial mesoderm" = "#77441B",
-                     "Anterior somitic tissues" = "#F90026",
-                     "Sclerotome" = "#A10037",
-                     "Dermomyotome" = "#DA5921",
-                     "Posterior somitic tissues" = "#E1C239",
-                     "Presomitic mesoderm" = "#9DD84A"
-)
-
+celltype_colours <- c(
+"Epiblast" = "#635547",
+"Primitive Streak" = "#DABE99",
+"Caudal epiblast" = "#9E6762",
+"PGC" = "#FACB12",
+"Anterior Primitive Streak" = "#C19F70",
+"Node"="#153B3D",
+"Notochord" = "#0F4A9C",
+"Gut tube" = "#EF5A9D",
+"Hindgut" = "#F397C0",
+"Midgut" = "#FF00B2",
+"Foregut" = "#FFB7FF",
+"Pharyngeal endoderm"="#95E1FF",
+"Thyroid primordium"="#97BAD3",
+"Nascent mesoderm" = "#C594BF",
+"Intermediate mesoderm" = "#139992",
+"Caudal mesoderm" = "#3F84AA",
+#"Lateral plate mesoderm" = "#F9DFE6",
+"Limb mesoderm" = "#E35F82",
+#"Forelimb" = "#D02D75",
+"Kidney primordium" = "#E85639",
+"Presomitic mesoderm"="#5581CA",#"#0000FF",#blue
+"Somitic mesoderm" = "#005579",
+"Posterior somitic tissues" = "#5ADBE4",#"#40E0D0",#turquoise
+"Paraxial mesoderm" = "#8DB5CE",
+"Cranial mesoderm" = "#456722",#"#006400",#darkgreen
+"Anterior somitic tissues"= "#D5E839",
+"Sclerotome" = "#E3CB3A",#"#FFFF00",#yellow
+"Dermomyotome" = "#00BFC4",#"#A52A2A",#brown
+"Pharyngeal mesoderm" = "#C9EBFB",
+#"Cardiopharyngeal progenitors" = "#556789",
+"Anterior cardiopharyngeal progenitors"="#683ED8",
+"Allantois" = "#532C8A",
+"YS mesothelium" = "#FF7F9C",
+"Epicardium"="#F79083",
+"Embryo proper mesothelium" = "#FF487D",
+"Cardiopharyngeal progenitors FHF"="#D780B0",
+"Cardiomyocytes FHF 1"="#A64D7E",
+"Cardiomyocytes FHF 2"="#B51D8D",
+"Cardiomyocytes SHF 1"="#5D70DC",
+"Cardiomyocytes SHF 2"="#332C6C",
+"Haematoendothelial progenitors" = "#FBBE92",
+"Blood progenitors" = "#6C4B4C",
+"Erythroid" = "#C72228",
+"Chorioallantoic-derived erythroid progenitors"="#E50000",
+"Megakaryocyte progenitors"="#E3CB3A",
+"MEP"="#EF4E22",
+"EMP"="#7C2A47",
+"YS endothelium"="#FF891C",
+"YS mesothelium-derived endothelial progenitors"="#AE3F3F",
+"Allantois endothelium"="#2F4A60",
+"Embryo proper endothelium"="#69B8A5",
+"Endocardium"="#428D8A",
+"Venous endothelium"="#BD3400",
+"NMPs/Mesoderm-biased" = "#89C1F5",
+"NMPs" = "#8EC792",
+"Ectoderm" = "#FF675C",
+"Optic vesicle" = "#BD7300",
+"Ventral forebrain progenitors"="#A0B689",
+#"Early dorsal forebrain progenitors"="#0F8073",
+#"Late dorsal forebrain progenitors"="#7A9941",
+"Midbrain/Hindbrain boundary"="#8AB3B5",
+"Midbrain progenitors"="#9BF981",
+"Dorsal midbrain neurons"="#12ED4C",
+"Ventral hindbrain progenitors"="#7E907A",
+"Dorsal hindbrain progenitors"="#2C6521",
+"Hindbrain floor plate"="#BF9DA8",
+"Hindbrain neural progenitors"="#59B545",
+"Neural tube"="#233629",
+"Migratory neural crest"="#4A6798",
+"Branchial arch neural crest"="#BD84B0",
+"Frontonasal mesenchyme"="#D3B1B1",
+"Spinal cord progenitors"="#6B2035",
+"Dorsal spinal cord progenitors"="#E273D6",
+"Non-neural ectoderm" = "#F7F79E",
+"Surface ectoderm" = "#FCFF00",
+"Epidermis" = "#FFF335",
+"Limb ectoderm" = "#FFD731",
+"Amniotic ectoderm" = "#DBB400",
+"Placodal ectoderm" = "#FF5C00",
+"Otic placode"="#F1A262",
+"Otic neural progenitors"="#00B000",
+"Visceral endoderm" = "#F6BFCB",
+"ExE endoderm" = "#7F6874",
+#"ExE ectoderm" = "#989898",
+"Parietal endoderm" = "#1A1A1A",
+"Endotome" = "#808080",
+#"failed_qc" = "#E0E0E0",
+"Non-neural ectoderm, Surface ectoderm" = "#F7F79E",
+"Dorsal spinal cord progenitors, Neural tube" = "#E273D6",
+ "proximal ExE ectoderm #1" = "#696969",
+  "proximal ExE ectoderm #2" = "#696969",
+  "distal ExE ectoderm #1" = "#A0A0A0",
+  "distal ExE ectoderm #2" = "#A0A0A0",
+    "Cardiopharyngeal progenitors SHF"="#F9DFE6",
+"ExE mesoderm" = "#956D91",              # Purple
+"lateral plate mesoderm" = "#D48A8D",    # Medium Purple
+"mesenchyme" = "#C17175",                # Existing color
+"Mesenchyme" = "#CC7818",                # Existing color
+"posterior somatic LP mesoderm #1" = "#9B81CF", # Blue Violet
+"posterior somatic LP mesoderm #2" = "#9B81CF" # Medium Slate Blue
+#"allantois" = "#532C8A",                 # Existing color
+#"splanchnic LP mesoderm #1" = "#BA55D3", # Medium Orchid
+#"splanchnic LP mesoderm #2" = "#9932CC"  # Dark Orchid
+    )

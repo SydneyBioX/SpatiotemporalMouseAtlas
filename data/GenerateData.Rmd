@@ -52,10 +52,16 @@ seqFishSPE = readRDS("seqFISH_spe.Rds")
 
 # Refined SeqFISH data <- this is the way
 
-# No need to show. seqfish clustering on its own, IGNORE for now
-cellTypeSeqFISH = readRDS("seqFISH_celltype.Rds") %>%
-  rownames_to_column("cellID")
+# load updated metadata
+metadata = readRDS("seqFISH_metadata_4_7_2024.rds")
+cellTypeRefined = metadata[,"refined_annotation", drop = FALSE] %>%
+    rownames_to_column("cellID")
 
+# No need to show. seqfish clustering on its own, IGNORE for now
+# if (FALSE) {
+  cellTypeSeqFISH = readRDS("seqFISH_celltype.Rds") %>%
+    rownames_to_column("cellID")
+# }
 
 # Using atlas labels on the seqFISH data
 cellTypeExtended = readRDS("extended_atlas_celltype.Rds") %>% 
@@ -63,6 +69,10 @@ cellTypeExtended = readRDS("extended_atlas_celltype.Rds") %>%
 
 # APDV data
 apdv = readRDS("AP_DV.Rds") %>% 
+  rownames_to_column("cellID")
+
+# Load UMAPs from the joint object
+joint_meta = readRDS("seqFISH_scRNA_metadata_4_7_2024.rds")[,c("UMAP_1","UMAP_2")] %>%
   rownames_to_column("cellID")
 ```
 
@@ -76,12 +86,14 @@ colDat = seqFishSPE %>%
 
 finalColDat = colDat %>% 
   left_join(cellTypeExtended, join_by("cellID")) %>% 
+  left_join(cellTypeRefined, join_by("cellID")) %>%
+  left_join(joint_meta, join_by("cellID")) %>%
   left_join(apdv, join_by("cellID")) %>% 
   column_to_rownames("cellID") %>%
-  mutate(extended_atlas_celltype = case_when(
-    extended_atlas_celltype == "low quality" ~ "Low quality",
-    TRUE ~ extended_atlas_celltype
-  )) %>% 
+  # mutate(extended_atlas_celltype = case_when(
+  #   extended_atlas_celltype == "low quality" ~ "Low quality",
+  #   TRUE ~ extended_atlas_celltype
+  # )) %>% 
   DataFrame()
 
 
@@ -140,7 +152,8 @@ g_leg_list[[ttl]] <- g_leg
 ttl = "Mapped cell type"
 
 # get the legend
-pc_df = data.frame(Expression = seqFISH_spe$extended_atlas_celltype)
+# pc_df = data.frame(Expression = seqFISH_spe$extended_atlas_celltype)
+pc_df = data.frame(Expression = seqFISH_spe$refined_annotation)
 
 g_leg_raw = ggplot(pc_df, aes(x = Expression, y = Expression)) +
     geom_point(aes(colour = Expression), size = 5) +

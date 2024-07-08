@@ -23,7 +23,7 @@ shinyUI(fluidPage(
 
                checkboxGroupInput("embryo_subset",
                                   "Subset by embryo:",
-                                  choiceNames = c(paste0("Embryo ", 1:7)),
+                                  choiceNames = c(paste0("Embryo ", 1:7, c(rep(" (E6.5)", 2), rep(" (E7.5)", 2), rep(" (E8.5)", 3)))),
                                   choiceValues = c(paste0("embryo", 7:1)),
                                   selected = "embryo4")
 
@@ -54,23 +54,23 @@ shinyUI(fluidPage(
                                            
                                            selectInput("colour_by",
                                                        "Colour by:",
-                                                       choices = c("Batch-corrected gene expression",
+                                                       choices = c("Expression logcounts",
                                                                    "Mapped cell type"
                                                        ),
-                                                       selected = "Batch-corrected gene expression",
+                                                       selected = "Expression logcounts",
                                                        multiple = FALSE),
                                            
                                            selectizeInput("gene_name",
                                                           "Gene name:",
                                                           choices = genes,
-                                                          selected = "Ttn"),
+                                                          selected = "T"),
                                            
                                            checkboxInput("celltype_subset_all",
                                                          "Show all cell types",
                                                          value = TRUE),
                                            
                                            selectizeInput("celltype_subset",
-                                                          "Subset by mapped cell type:",
+                                                          "Subset by cell type:",
                                                           choices = celltypes,
                                                           selected = NULL,
                                                           multiple = TRUE),
@@ -79,7 +79,7 @@ shinyUI(fluidPage(
                                                        "Point size",
                                                        min = 0.1,
                                                        max = 1.5,
-                                                       value = 0.5,
+                                                       value = 0.3,
                                                        step = 0.1),
                                            
                                     ),
@@ -109,7 +109,7 @@ shinyUI(fluidPage(
                                            
                                            textInput("gene_name_imp",
                                                      "Please type in a gene name:",
-                                                     value = "Ttn"),
+                                                     value = "T"),
                                            
                                            textOutput("gene_name_imp_parse_status",
                                                       inline = TRUE),
@@ -265,16 +265,16 @@ shinyUI(fluidPage(
                                                   
                                           selectInput("virtual_colour_by",
                                                       "Colour by:",
-                                                      choices = c("Batch-corrected gene expression",
+                                                      choices = c("Expression logcounts",
                                                                   "Mapped cell type"
                                                       ),
-                                                      selected = "Batch-corrected gene expression",
+                                                      selected = "Expression logcounts",
                                                       multiple = FALSE),
                                           
                                           selectizeInput("virtual_gene_name",
                                                          "Gene name:",
                                                          choices = genes,
-                                                         selected = "Ttn"),
+                                                         selected = "T"),
                                            
                                            HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
                                            
@@ -303,7 +303,7 @@ shinyUI(fluidPage(
                                                        "Point size",
                                                        min = 0.5,
                                                        max = 1.5,
-                                                       value = 1,
+                                                       value = 0.3,
                                                        step = 0.1),
                                           
                                           sliderInput('dissectionStrokeSize',
