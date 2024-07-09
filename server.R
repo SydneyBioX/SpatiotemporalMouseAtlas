@@ -1,5 +1,7 @@
 shinyServer(function(input, output, session) {
   
+  shinylogs::track_usage(storage_mode = shinylogs::store_json(path = "logs/"))
+  
   values <- reactiveValues(meta = meta)
   
   gene_name_impGenerator = function() {

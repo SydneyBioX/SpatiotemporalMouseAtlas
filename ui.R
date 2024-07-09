@@ -15,7 +15,7 @@ shinyUI(fluidPage(
     "))
     ),
     
-    titlePanel("Highly multiplexed spatially resolved gene expression profiling of mouse organogenesis"),
+    titlePanel("Spatiotemporal Mouse Atlas"),
     
     fluidRow(
     
