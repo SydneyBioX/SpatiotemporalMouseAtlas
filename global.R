@@ -149,9 +149,9 @@ add_imp = function() {
 
 add_exprs_norm = function() {
     if (!"exprs_norm" %in% ls(envir = .GlobalEnv)) {
-        showNotification("Loading batch-corrected expression...")
+        showNotification("Loading expression logcounts...")
         exprs_norm <<- logcounts(seqFISH_spe)
-        showNotification("Loading batch-corrected expression... done!")
+        showNotification("Loading expression logcounts... done!")
     }
 }
 
