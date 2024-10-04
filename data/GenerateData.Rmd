@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r message=FALSE, warning = FALSE}
 library(SingleCellExperiment)
 library(scater)
 library(scran)
@@ -54,7 +54,7 @@ seqFishSPE = readRDS("seqFISH_spe.Rds")
 # Refined SeqFISH data <- this is the way
 
 # load updated metadata
-metadata = readRDS("seqFISH_metadata_4_7_2024.rds")
+metadata = readRDS("FINAL_REFINED_ANNOTATIONS_1_10_2024.Rds")
 cellTypeRefined = metadata[,"refined_annotation", drop = FALSE] %>%
   rownames_to_column("cellID")
 

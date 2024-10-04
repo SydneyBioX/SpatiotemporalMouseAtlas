@@ -355,7 +355,6 @@ shinyServer(function(input, output, session) {
       
       
     }
-    #browser()
     
     ct_df = data.frame(pc_val = pc_vals, ct = meta[names(pc_vals), "extended_atlas_celltype"])
     ct_count = unclass(table(ct_df$ct))
@@ -707,6 +706,20 @@ shinyServer(function(input, output, session) {
       pc_cols = celltype_colours[pc_vals]
       names(pc_cols) <- rownames(meta_sub)
       
+    } 
+    
+    if (input$virtual_colour_by == "AP axis") {
+      
+      pc_vals = meta_sub$AP
+      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
+      names(pc_cols) <- rownames(meta_sub)
+    } 
+    
+    if (input$virtual_colour_by == "DV axis") {
+      
+      pc_vals = meta_sub$DV
+      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
+      names(pc_cols) <- rownames(meta_sub)
     }
     
     
@@ -1284,4 +1297,80 @@ shinyServer(function(input, output, session) {
     paste0("")
   })
   
+  
+  
+  
+  
+  
+  ## AP DV plot
+  
+  
+  APDVPlotGenerator = function() {
+    
+    # Cells to subset
+    if(input$celltype_subset_all_apdv) {
+      celltype_subset = celltypes
+    } else {
+      celltype_subset = input$apdv_plot_celltype
+    }
+    
+    # Filter cell type and embryo
+    meta_sub = meta %>% 
+      filter(embryo %in% input$embryo_subset) %>% 
+      filter(cellType %in% celltype_subset)
+    
+    
+    # Add gene expression 
+    add_imp()
+    validate(need(input$apdv_plot_genename %in% rownames(imp), "No valid gene selected."))
+    meta_sub = cbind(meta_sub[c("cellType", input$ap_or_dv)], t(imp)[meta_sub$uniqueID, input$apdv_plot_genename])
+    colnames(meta_sub)[3:length(colnames(meta_sub))] = input$apdv_plot_genename
+    
+    meta_sub = meta_sub %>% 
+      pivot_longer(!c("cellType", input$ap_or_dv), names_to = "genes", values_to = "expression")
+    
+    
+    
+    plots = lapply(input$apdv_plot_genename, function(geneName){
+      
+      data = meta_sub %>% 
+        filter(genes == geneName)
+      
+      p <- ggplot(data, aes(x = .data[[input$ap_or_dv]], y = expression)) +
+        geom_point(aes(text = paste0(input$ap_or_dv, " axis: ", round(.data[[input$ap_or_dv]], 2), "<br>",
+                          genes," expression: ", round(expression, 2), "<br>",
+                          "Cell Type: ", cellType, "<br>"))) +
+        geom_smooth() +
+        theme_classic() +  
+        labs(x = paste(input$ap_or_dv, "Axis"),
+             y = paste("Gene:", geneName))
+      
+      # Convert ggplot object to plotly
+      return(ggplotly(p, tooltip = "text"))
+      
+    })
+    
+    final_plot = subplot(plots,
+                         nrows = length(input$apdv_plot_genename),
+                         shareX = TRUE,
+                         titleY = TRUE)
+    
+    return(final_plot)
+    
+  }
+  
+  output$APDV_plot <- renderPlotly(
+    
+      APDVPlotGenerator()
+  
+  )
+  
+
+  
+  
 })
+
+
+
+
+

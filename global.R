@@ -7,10 +7,14 @@ library(shinycssloaders)
 library(ggiraph)
 library(Matrix)
 library(SingleCellExperiment)
+library(plotly)
+library(pheatmap)
+library(tidyverse)
 
 source("celltype_colours.R")
 
 colours = c("grey85","cornflowerblue", "black")
+APDV_colours = c( "blue", "red")
 
 # function to check if colours are legit colours
 areColours <- function(x) {
@@ -65,10 +69,6 @@ rnames = readRDS("data/combined_rnames.Rds")
 genes_imp = rnames
 
 
-## TEST UMAPDATA, MUST REMOVE
-# set.seed(10)
-# meta$UMAP1 = rnorm(length(meta$dim1))
-# meta$UMAP2 = rnorm(length(meta$dim1))
 meta$UMAP1 = meta$UMAP_1
 meta$UMAP2 = meta$UMAP_2
 

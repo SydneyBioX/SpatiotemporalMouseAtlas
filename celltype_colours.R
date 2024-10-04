@@ -1,3 +1,5 @@
+# copied from slack msg with Luke from 20 August 2024
+
 celltype_colours <- c(
 "Epiblast" = "#635547",
 "Primitive Streak" = "#DABE99",
@@ -45,12 +47,14 @@ celltype_colours <- c(
 "Chorioallantoic-derived erythroid progenitors"="#E50000",
 "Megakaryocyte progenitors"="#E3CB3A",
 "MEP"="#EF4E22",
-"EMP"="#7C2A47",
 "YS endothelium"="#FF891C",
 "YS mesothelium-derived endothelial progenitors"="#AE3F3F",
 "Allantois endothelium"="#2F4A60",
-"Embryo proper endothelium"="#69B8A5",
-"Endocardium"="#428D8A",
+  "Embryo proper endothelium #1" = "#69B8A5",  # Original color
+  "Embryo proper endothelium #2" = "#B2DBCE",  # Much lighter shade of the original color
+  "Endocardium #1" = "#FF6666",  # Much lighter shade
+  "Endocardium #2" = "#FFB3B3",  # Medium light shade
+  "EMP" = "#5A0026",  # Darker than both Endocardium shades
 "Venous endothelium"="#BD3400",
 "NMPs/Mesoderm-biased" = "#89C1F5",
 "NMPs" = "#8EC792",
@@ -88,17 +92,17 @@ celltype_colours <- c(
 #"failed_qc" = "#E0E0E0",
 "Non-neural ectoderm, Surface ectoderm" = "#F7F79E",
 "Dorsal spinal cord progenitors, Neural tube" = "#E273D6",
- "proximal ExE ectoderm #1" = "#696969",
-  "proximal ExE ectoderm #2" = "#696969",
-  "distal ExE ectoderm #1" = "#A0A0A0",
-  "distal ExE ectoderm #2" = "#A0A0A0",
-    "Cardiopharyngeal progenitors SHF"="#F9DFE6",
+ "ExE ectoderm proximal" = "#696969",
+  #"proximal ExE ectoderm #2" = "#696969",
+  "ExE ectoderm distal" = "#A0A0A0",
+  #"distal ExE ectoderm #2" = "#A0A0A0",
+"Anterior LPM"="#F9DFE6",
 "ExE mesoderm" = "#956D91",              # Purple
-"lateral plate mesoderm" = "#D48A8D",    # Medium Purple
-"mesenchyme" = "#C17175",                # Existing color
+"ExE mesoderm and Anterior LPM" = "#D48A8D",    # Medium Purple
+#"mesenchyme" = "#C17175",                # Existing color
 "Mesenchyme" = "#CC7818",                # Existing color
-"posterior somatic LP mesoderm #1" = "#9B81CF", # Blue Violet
-"posterior somatic LP mesoderm #2" = "#9B81CF" # Medium Slate Blue
+"ExE mesoderm and Posterior LPM" = "#9B81CF" # Blue Violet
+#"posterior somatic LP mesoderm #2" = "#9B81CF" # Medium Slate Blue
 #"allantois" = "#532C8A",                 # Existing color
 #"splanchnic LP mesoderm #1" = "#BA55D3", # Medium Orchid
 #"splanchnic LP mesoderm #2" = "#9932CC"  # Dark Orchid
