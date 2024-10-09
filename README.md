@@ -11,7 +11,7 @@ output:
 
 #### A Spatiotemporal Atlas of Mouse Gastrulation and Early Organogenesis to Explore Axial Patterning and Project In Vitro Models onto In Vivo Space:
 
-<a href="TBA" target="_blank">bioRxiv Link (to come)<i>bioRxiv</i> (2024)</a>
+<a href="TBA" target="_blank">bioRxiv Link (to come)</a>
 
 </center>
 
@@ -39,9 +39,11 @@ Figure 1: Exploring gene expression patterns during mouse gastrulation using <a 
 
 <br>
 
-#### Links
+#### Download links
 
--   The data is available to download <a href="TBA" target="_blank">here (to come).</a>.
+-   <a href="https://maths.usyd.edu.au/u/sheilag/SpatioTemporalMouseAtlas/seqFISH.h5ad" target="_blank">seqFISH observed data (450MB)</a>.
+-   <a href="https://maths.usyd.edu.au/u/sheilag/SpatioTemporalMouseAtlas/imputed.h5ad" target="_blank">imputed logcounts for seqFISH cells (2.7GB)</a>.
+-   <a href="https://maths.usyd.edu.au/u/sheilag/SpatioTemporalMouseAtlas/joint_annotation.csv" target="_blank">joint annotation for seqFISH and scRNA-seq data (64MB)</a>.
 
 <br>
 

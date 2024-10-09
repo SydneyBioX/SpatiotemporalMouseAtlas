@@ -103,6 +103,14 @@ colData(seqFishSPE) = finalColDat
 saveRDS(seqFishSPE, "seqFISH_spe_final.Rds")
 ```
 
+# Write the object out to a h5ad object
+
+```{r}
+library(zellkonverter)
+writeH5AD(seqFishSPE, file = "seqFISH.h5ad")
+```
+
+
 # Generate legend ggplots for app
 
 ```{r}
@@ -221,6 +229,29 @@ if (FALSE) {
   # this step takes about 30 minutes !!
   writeHDF5Array(imp_combined, filepath="combined_compressed.h5", name="logcounts", H5type="H5T_IEEE_F32LE", level=9)
 }
+```
+# create an h5ad for the imputed logcounts for seqFISH cells
+
+```{r}
+imp = HDF5Array(filepath = "combined_compressed.h5", name = "logcounts")
+# rnames = readRDS("combined_rnames.Rds")
+# cnames = readRDS("combined_cnames.Rds")
+# rownames(imp) <- rnames
+# colnames(imp) <- cnames
+seqFishSPE_sub <- seqFishSPE[,colnames(imp)]
+
+impSPE = SingleCellExperiment(assays = list(logcounts = imp),
+                              colData = colData(seqFishSPE_sub),
+                              reducedDims = list(spatial = reducedDim(seqFishSPE_sub, "spatial")))
+
+writeH5AD(impSPE, file = "imputed.h5ad")
+```
+
+# csv of joint annotation of seqFISH and scRNA-seq cells
+
+```{r}
+joint_annotation = metadata
+write.csv(joint_annotation, file = "joint_annotation.csv", quote = FALSE, row.names = TRUE, col.names = TRUE)
 ```
 
 
