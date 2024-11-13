@@ -25,7 +25,13 @@ shinyUI(fluidPage(
                                   "Subset by embryo:",
                                   choiceNames = c(paste0("Embryo ", 1:7, c(rep(" (E6.5)", 2), rep(" (E7.5)", 2), rep(" (E8.5)", 3)))),
                                   choiceValues = c(paste0("embryo", 7:1)),
-                                  selected = "embryo4")
+                                  selected = "embryo4"),
+               
+               checkboxInput("embryo_same_size",
+                             "Make embryos same size",
+                             value = FALSE),
+               
+               
 
                # HTML("z-slices are contiguous cell layers 12 um apart."),
 
@@ -44,6 +50,7 @@ shinyUI(fluidPage(
         column(11,
 
                tabsetPanel(id = "tabs",
+                           selected = "Virtual dissection", ## REMOVE
                            tabPanel("Landing page", fluid = TRUE,
                                     includeMarkdown("README.md")
                            ),
@@ -65,7 +72,7 @@ shinyUI(fluidPage(
                                                           choices = genes,
                                                           selected = "T"),
 
-                                           checkboxInput("celltype_subset_all",
+                                           checkboxInput("celltype_subset_all_SP",
                                                          "Show all cell types",
                                                          value = TRUE),
 
@@ -107,14 +114,20 @@ shinyUI(fluidPage(
 
                                     column(2,
 
-                                           textInput("gene_name_imp",
-                                                     "Please type in a gene name:",
-                                                     value = "T"),
+                                           # textInput("gene_name_imp",
+                                           #           "Please type in a gene name:",
+                                           #           value = "T"),
+                                           
+                                           selectizeInput("gene_name_imp",
+                                                          "Gene name:",
+                                                          choices = sort(genes_imp),
+                                                          selected = c("T"),
+                                                          options= list(maxOptions = length(genes_imp))),
 
                                            textOutput("gene_name_imp_parse_status",
                                                       inline = TRUE),
 
-                                           checkboxInput("celltype_subset_all",
+                                           checkboxInput("celltype_subset_all_SPImputed",
                                                          "Show all cell types",
                                                          value = TRUE),
 
@@ -122,7 +135,14 @@ shinyUI(fluidPage(
                                                           "Subset by cell type:",
                                                           choices = celltypes,
                                                           selected = NULL,
-                                                          multiple = TRUE)
+                                                          multiple = TRUE),
+                                           
+                                           sliderInput('spatialPlotPointSizeImp',
+                                                       "Point size",
+                                                       min = 0.05,
+                                                       max = 1.5,
+                                                       value = 0.3,
+                                                       step = 0.05)
                                     ),
 
                                     column(10,
@@ -130,131 +150,20 @@ shinyUI(fluidPage(
                                                HTML("<p style=\"text-align: center;\"><em>Failed QC cells are removed here. Plot of imputed spatial expression, and distribution of imputed expression per cell type (below). Check option on left panel for plot of cells' segmentation.</em></p>"),
 
                                                girafeOutput("spatialPlot_imp",
-                                                            height = "900px",
-                                                            width = "1200px"
+                                                            height = "100%",
+                                                            width = "100%"
                                                ) %>% withSpinner(color="#0dc5c1"),
 
                                                plotOutput("spatialPlot_leg_imp",
-                                                          height = "200px",
-                                                          width = "1200px"),
+                                                          height = "200px"),
 
                                                girafeOutput("violinPlot_imp",
-                                                            height = "600px",
-                                                            width = "1200px"
+                                                            height = "100%",
+                                                            width = "100%"
                                                ) %>% withSpinner(color="#0dc5c1")
                                     )
                            ),
-                           # # tabPanel("Digital in situ", fluid = TRUE,
-                           # #
-                           # #          column(2,
-                           # #
-                           # #
-                           # #                 selectizeInput("gene_names_mRNA",
-                           # #                                "Select up to five genes:",
-                           # #                                choices = genes,
-                           # #                                selected = c("Cdh5","Dlk1","Postn","Tbx5"),
-                           # #                                multiple = TRUE),
-                           # #
-                           # #                 textInput("colours_mRNA",
-                           # #                           "mRNA dot colours (separated by spaces)",
-                           # #                           value = "cyan green orange red",
-                           # #                           placeholder = "e.g. \"yellow red blue\" (without the quotes)"
-                           # #                 ),
-                           # #
-                           # #                 actionButton("go","Plot digital in situ", width = "100%"),
-                           # #
-                           # #                 HTML("<i> </i>"),
-                           # #
-                           # #                 downloadButton("download_mRNAPlot", "Download PDF",
-                           # #                                style="width:100%"),
-                           # #
-                           # #                 checkboxInput("mRNA_full",
-                           # #                               "Plot whole embryo (ignores regional selection)",
-                           # #                               value = FALSE),
-                           # #
-                           # #                 HTML("<i>FURTHER OPTIONS</i>"),
-                           # #
-                           # #                 selectizeInput('celltype_outline_mRNA',
-                           # #                                'Cell types to outline',
-                           # #                                choices = celltypes,
-                           # #                                selected = "Cardiomyocytes",
-                           # #                                multiple = TRUE),
-                           # #
-                           # #                 # this is here so that double click in digital in situ works
-                           # #                 verbatimTextOutput("info"),
-                           # #
-                           # #                 sliderInput('radius',
-                           # #                             "Digital in situ area width (only used if \"Plot whole embryo\" is unchecked)",
-                           # #                             min = 0.75,
-                           # #                             max = 5,
-                           # #                             value = 1.25,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo1_centre_x',
-                           # #                             "embryo1 centre value x",
-                           # #                             min = embryo_coords_range_x[1],
-                           # #                             max = embryo_coords_range_x[2],
-                           # #                             value = -0.6,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo1_centre_y',
-                           # #                             "embryo1 centre value y",
-                           # #                             min = embryo_coords_range_y[1],
-                           # #                             max = embryo_coords_range_y[2],
-                           # #                             value = -0.1,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo2_centre_x',
-                           # #                             "embryo2 centre value in x",
-                           # #                             min = embryo_coords_range_x[1],
-                           # #                             max = embryo_coords_range_x[2],
-                           # #                             value = -1.3,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo2_centre_y',
-                           # #                             "embryo2 centre value in y",
-                           # #                             min = embryo_coords_range_y[1],
-                           # #                             max = embryo_coords_range_y[2],
-                           # #                             value = -0.25,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo3_centre_x',
-                           # #                             "embryo3 centre value in x",
-                           # #                             min = embryo_coords_range_x[1],
-                           # #                             max = embryo_coords_range_x[2],
-                           # #                             value = 0,
-                           # #                             round = -1),
-                           # #
-                           # #                 sliderInput('embryo3_centre_y',
-                           # #                             "embryo3 centre value in y",
-                           # #                             min = embryo_coords_range_y[1],
-                           # #                             max = embryo_coords_range_y[2],
-                           # #                             value = -0.6,
-                           # #                             round = -1),
-                           # #
-                           # #                 downloadButton("download_mRNAPlot_gg", "Download ggplot object",
-                           # #                                style="width:100%")
-                           # #
-                           # #          ),
-                           #
-                           #          column(8,
-                           #                 mainPanel(
-                           #
-                           #                     HTML("<p style=\"text-align: center;\"><em>Double click on each panel to re-centre the digital in situ regional selection, before clicking \"Plot digital in situ\".</em></p>"),
-                           #
-                           #                     plotOutput("mRNARegionPlot",
-                           #                                dblclick = "mRNARegionPlot_dblclick",
-                           #                                width = "1200px"
-                           #                     ),
-                           #
-                           #                     plotOutput("mRNAPlot",
-                           #                                height = "600px",
-                           #                                width = "1200px"
-                           #                     )  %>% withSpinner(color="#0dc5c1")
-                           #                 )
-                           #          )
-                           #
-                           # ),
+                           
                            tabPanel("Virtual dissection", fluid = TRUE,
 
                                     column(2,
@@ -268,6 +177,7 @@ shinyUI(fluidPage(
                                           selectInput("virtual_colour_by",
                                                       "Colour by:",
                                                       choices = c("Expression logcounts",
+                                                                  "Imputed expression",
                                                                   "Mapped cell type",
                                                                   "AP axis",
                                                                   "DV axis"
@@ -276,11 +186,18 @@ shinyUI(fluidPage(
                                                       multiple = FALSE),
 
                                           selectizeInput("virtual_gene_name",
-                                                         "Gene name:",
+                                                         "Gene name (Panel):",
                                                          choices = genes,
                                                          selected = "T"),
+                                          
+                                          selectizeInput("virtual_gene_name_imputed",
+                                                         "Gene name (Imputed):",
+                                                         choices = sort(genes_imp),
+                                                         selected = "T",
+                                                         options= list(maxOptions = length(genes_imp))),
 
                                            HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
+                                          
 
                                            actionButton("add", "Add selection to Group A",
                                                         width = "100%",
@@ -297,22 +214,16 @@ shinyUI(fluidPage(
 
                                            HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
 
-                                           actionButton("remove", "Remove selection from either Group",
-                                                        width = "100%",
-                                                        class = "flexibleActionButton"),
-
-                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
-
                                            sliderInput('dissectionPointSize',
                                                        "Point size",
-                                                       min = 0.05,
+                                                       min = 0.1,
                                                        max = 1.5,
-                                                       value = 0.3,
+                                                       value = 0.5,
                                                        step = 0.1),
 
                                           sliderInput('dissectionStrokeSize',
                                                       "Selected outline width",
-                                                      min = 0.05,
+                                                      min = 0.1,
                                                       max = 0.5,
                                                       value = 0.3,
                                                       step = 0.05),
@@ -354,34 +265,7 @@ shinyUI(fluidPage(
 
                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
 
-
-                                           textInput("logical",
-                                                     "Advanced use: logical statement to select cells",
-                                                     value = "",
-                                                     placeholder = "e.g. \"Shh > 0.5\", without the quotes"),
-
-                                           actionButton("addLogical", "Add logically selected cells to Group A",
-                                                        width = "100%",
-                                                        class = "flexibleActionButton",
-                                                        style="color:#ff0000"),
-
-                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
-
-                                           actionButton("addLogical2", "Add logically selected cells to Group B",
-                                                        width = "100%",
-                                                        class = "flexibleActionButton",
-                                                        style="color:#0000ff"),
-
-                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
-
-                                           actionButton("removeLogical", "Remove logically selected from either Group",
-                                                        width = "100%",
-                                                        class = "flexibleActionButton",
-                                                        style="font-size:13px"),
-
-                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
-
-                                           HTML("Only selected cells within the selected embryos and z-slices will be downloaded."),
+                                           HTML("Only selected cells within the selected embryos will be downloaded."),
 
                                            downloadButton("virtualDissectionCellDownload",
                                                           "Download Group A cell names",
@@ -429,12 +313,18 @@ shinyUI(fluidPage(
                                              actionButton("removeAll",
                                                           HTML("<i>Reset all cells to Unselected</i>"),
                                                           class = "flexibleActionButton"),
+                                             
+                                             actionButton("remove",
+                                                          "Remove selection from either Group",
+                                                          class = "flexibleActionButton"),
 
                                              actionButton("virtualDissection_reset",
                                                           label = "Clear lasso selection",
                                                           class = "flexibleActionButton"),
 
                                            ),
+                                           
+                                           HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
 
                                            girafeOutput("virtualDissection",
                                                         height = "100%",
@@ -445,13 +335,15 @@ shinyUI(fluidPage(
                                                       height = "200px"),
 
                                            HTML("<p style=\"margin-bottom:5mm;\"> </p>"),
-
-                                               splitLayout(cellWidths = c("50%", "50%"),
-                                                           plotOutput("VirtualDissectionBarPlot",
-                                                                      height = "900px") %>% withSpinner(color="#0dc5c1"),
-                                                           girafeOutput("VirtualDissectionMAPlot", height = "900px") %>% withSpinner(color="#0dc5c1")
-
-                                           )
+                                           
+                                           plotOutput("VirtualDissectionBarPlot",
+                                                      height = "700px") |> 
+                                             withSpinner(color="#0dc5c1"),
+                                           
+                                           girafeOutput("VirtualDissectionMAPlot",
+                                                        height = "700px",
+                                                        width = "100%") %>% 
+                                             withSpinner(color="#0dc5c1")
                                     )
                            ),
                            

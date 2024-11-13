@@ -44,6 +44,37 @@ shinyServer(function(input, output, session) {
   })
   
   
+  
+  # Normalising scales for multiple embryos
+  norm = function(col){
+    (col - min(col, na.rm = TRUE)) / (max(col, na.rm = TRUE) - min(col, na.rm = TRUE))
+  }
+  
+  normaliseScale = function(data) {
+    data = data |> 
+      group_by(embryo) |> 
+      mutate(dim1 = norm(dim1), 
+             dim2 = 2*norm(dim2)) |> 
+      ungroup()
+    
+    return(data)
+  }
+  
+  # Syncs the sliders for point size for spatial plot and spatial plot (imputed)
+  observeEvent(
+    input$spatialPlotPointSize,
+    updateSelectizeInput(session, "spatialPlotPointSizeImp", selected = input$spatialPlotPointSize),
+  )
+  
+  observeEvent(
+    input$spatialPlotPointSizeImp,
+    updateSelectizeInput(session, "spatialPlotPointSize", selected = input$spatialPlotPointSizeImp),
+    
+  )
+  
+  
+
+  # Generates spatial plot
   spatialPlotGenerator = function() {
     
     meta_sub = subset(
@@ -51,9 +82,27 @@ shinyServer(function(input, output, session) {
       embryo %in% input$embryo_subset #& 
       # z %in% input$z_subset
     )
+    
+    
+    if(input$embryo_same_size) {
+      meta_sub = normaliseScale(meta_sub)
+    }
+    
     selectedNames = meta_sub$uniqueID
+
+    
+    # for the imputed plot, filter all NA cells
+    # Set expression to 0 for NAs cell types when subsetting cell types
+    # Plot by expression for log counts plots, dont grey out NAs
+    
     
     if (input$tabs == "Spatial plot (Imputed)") {
+      
+      if(input$celltype_subset_all_SPImputed) {
+        celltype_subset_imp = celltypes
+      } else {
+        celltype_subset_imp = input$celltype_subset_imp
+      }
       
       add_imp()
       
@@ -74,13 +123,37 @@ shinyServer(function(input, output, session) {
         need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
       )
       
+      # Remove NA cells, as they can't be imputed
+      meta_sub = meta_sub |> 
+        filter(!is.na(cellType))
+      
+      pc_vals = pc_vals[meta_sub$uniqueID]
+      
+      # Make the expression of NA cells 0 so they dont show up in front of selected cells.
+      makeZero = meta_sub |> 
+        filter(!cellType %in% celltype_subset_imp) |> 
+        pull(uniqueID)
+      
+      pc_vals[makeZero] = 0
+      
       pc_cols = colorRampPalette(colours)(100)[as.numeric(cut(pc_vals,100))]
+      
+      # If all expression is 0 then grey out all cells
+      if(sum(pc_vals) == 0) {
+        pc_cols = rep("grey95", length(pc_vals))
+      }
+      
       names(pc_cols) <- names(pc_vals)
       
       yl = " (Imputed expression)"
       
     } else {
       
+      if(input$celltype_subset_all_SP) {
+        celltype_subset = celltypes
+      } else {
+        celltype_subset = input$celltype_subset
+      }
       
       if (input$colour_by == "Expression logcounts") {
         
@@ -92,12 +165,23 @@ shinyServer(function(input, output, session) {
           need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
         )
         
+        # Set the expression of subsetted cells to 0, so they don't show up in front, this wont affect violin plot as it uses separate data.frame
+        pc_vals[rownames(meta_sub)[!meta_sub$cellType %in% celltype_subset]] = 0
+        
         pc_cols = colorRampPalette(colours)(100)[as.numeric(cut(pc_vals,100))]
+        
+        # If all expression is 0 then grey out all cells
+        if(sum(pc_vals) == 0) {
+          pc_cols = rep("grey95", length(pc_vals))
+        }
+        
         names(pc_cols) <- names(pc_vals)
         
         yl = ""
+        
       }
       if (input$colour_by == "Mapped cell type") {
+
         
         pc_vals = as.character(meta_sub$cellType)
         
@@ -105,74 +189,54 @@ shinyServer(function(input, output, session) {
           need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
         )
         
-        pc_cols = celltype_colours[pc_vals]
-        names(pc_cols) <- rownames(meta_sub)
         
+        pc_cols = celltype_colours[pc_vals]
+        pc_cols[!pc_vals %in% celltype_subset] = "grey95"
+        
+        # Add ordering of cell types, so selected cell types show up first, make sure NA is the first factor so that its always plotted behind
+        pc_vals = factor(pc_vals, levels = c(
+          NA,
+          unique(pc_vals[!pc_vals %in% c(celltype_subset, NA)]),
+          unique(pc_vals[pc_vals %in% celltype_subset])
+        ), exclude = NULL)
+        
+        names(pc_cols) <- rownames(meta_sub)
+       
       }
       
     }
+
+    # Order meta sub by pc_vals so cells of interest show up on top.
+    meta_sub = meta_sub |>
+      mutate(pc_vals = pc_vals) |>
+      arrange(pc_vals)
+
     
-    # if(any("All" %in% input$celltype_subset)) {
-    #   celltype_subset = celltypes
-    #   celltype_subset_imp = celltypes
-    # } else{
-    #   celltype_subset_imp = input$celltype_subset_imp
-    #   celltype_subset = input$celltype_subset
-    # }
-    # 
-    # # 
-    # # updateSelectizeInput(session = session,
-    # #                      "celltype_subset",
-    # #                      selected = input$celltype_subset[!"All" %in% input$celltype_subset])
-    # 
+    g_base = meta_sub |> 
+      ggplot(
+        aes(
+          x = dim1,
+          y = dim2,
+          group = uniqueID,
+          fill = uniqueID,
+          tooltip = cellType,
+          colour = uniqueID
+        )
+      ) + 
+      scale_fill_manual(values = pc_cols, na.value = NA) +
+      scale_colour_manual(values = pc_cols, na.value = NA) 
     
-    if(input$celltype_subset_all) {
-      celltype_subset = celltypes
-      celltype_subset_imp = celltypes
-    } else {
-      celltype_subset = input$celltype_subset
-      celltype_subset_imp = input$celltype_subset_imp
-    }
-    
-    # subset further (need to update this)
-    if (input$tabs == "Spatial plot (Imputed)") {
-      pc_cols[rownames(meta)[!meta$cellType %in% celltype_subset_imp]] <- "grey95"
-    } else {
-      pc_cols[rownames(meta)[!meta$cellType %in% celltype_subset]] <- "grey95"
-    }
-    
-    # pc_cols_border = ifelse(!is.na(pc_cols), "black", "grey90")
-    
-    g_base = ggplot(meta_sub,
-                    aes(x = dim1,
-                        y = dim2,
-                        group = uniqueID,
-                        fill = uniqueID,
-                        tooltip = cellType,
-                        colour = uniqueID))
-    
-    
-    # if (input$show_segmentation) {
-    #     g = g_base +
-    #         geom_polygon_interactive(
-    #             size = 0.05
-    #         )
-    # } else {
     g = g_base +
       geom_point_interactive(
-        # colour = "grey20",
         size = input$spatialPlotPointSize,
         shape = 21
       )
-    # }
-    
-    g <- g + 
-      scale_fill_manual(values = pc_cols, na.value = NA) +
-      scale_colour_manual(values = pc_cols, na.value = NA) +
+   
+    g <- g +
       theme_classic() +
       coord_fixed() +
       xlab("") +
-      # legend needs to be "none" because of way colour is defined 
+      # legend needs to be "none" because of colour is defined by uniqueID in aes not expression/celltype
       theme(legend.position = "none") + 
       theme(axis.line = element_blank()) + 
       theme(axis.text = element_blank()) + 
@@ -184,28 +248,15 @@ shinyServer(function(input, output, session) {
       NULL
     
     if (length(input$embryo_subset) > 1) {
+
+      g <- g +
+        facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
+        NULL
       
-      # if (input$show_segmentation) {
-      #     g <- g +
-      #         facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
-      #         NULL
-      # } else {
-      g <- g +
-        facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
-        NULL
-      # }
     } else {
-      # if (length(input$z_subset) > 1) {
-      # if (input$show_segmentation) {
-      #     g <- g +
-      #         facet_grid(z~embryo, labeller = labeller(embryo = embryolabeller)) +
-      #         NULL
-      # } else {
       g <- g +
         facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
         NULL
-      # }
-      # }
     }
     
     g_leg = NULL
@@ -409,233 +460,6 @@ shinyServer(function(input, output, session) {
   })
   
   
-  mRNAPlotGenerator = function() {
-    
-    validate(need(nchar(input$colours_mRNA) > 0,
-                  "Please type in colours (separated by spaces) for digital in situ."
-    ))
-    validate(need(length(input$gene_names_mRNA)>0,
-                  "Please select some genes for digital in situ."        
-    ))
-    
-    add_boundary_polygons()
-    
-    gene_names_mRNA <- input$gene_names_mRNA[1:pmin(5,length(input$gene_names_mRNA))]
-    gene_colours_mRNA <- subsetColours(unlist(strsplit(input$colours_mRNA, " ")))
-    if (length(gene_colours_mRNA) < length(gene_names_mRNA)) {
-      gene_colours_mRNA <- c(gene_colours_mRNA, rep("white", length(gene_names_mRNA) - length(gene_colours_mRNA)))
-    }
-    
-    names(gene_colours_mRNA) <- gene_names_mRNA
-    
-    embryo2_shift_x = -(input$embryo2_centre_x - input$embryo1_centre_x)
-    embryo3_shift_x = -(input$embryo3_centre_x - input$embryo1_centre_x)
-    
-    embryo2_shift_y = -(input$embryo2_centre_y - input$embryo1_centre_y)
-    embryo3_shift_y = -(input$embryo3_centre_y - input$embryo1_centre_y)
-    
-    heart_shift_x = c(0, embryo2_shift_x, embryo3_shift_x)
-    names(heart_shift_x) <- c("embryo1","embryo2","embryo3")
-    
-    heart_shift_y = c(0, embryo2_shift_y, embryo3_shift_y)
-    names(heart_shift_y) <- c("embryo1","embryo2","embryo3")
-    
-    range_x = c(input$embryo1_centre_x - input$radius, input$embryo1_centre_x + input$radius)
-    range_y = c(input$embryo1_centre_y - input$radius, input$embryo1_centre_y + input$radius)
-    add_mRNA_df()
-    
-    mRNA_genes = mRNA_df[mRNA_df$geneID %in% gene_names_mRNA &
-                           mRNA_df$embryo %in% input$embryo_subset #& 
-                         # mRNA_df$z %in% input$z_subset
-                         ,]
-    
-    boundary_polygons_sub = subset(boundary_polygons,
-                                   boundary_polygons$embryo %in% input$embryo_subset #& 
-                                   # boundary_polygons$z %in% input$z_subset
-    )
-    
-    if (!input$mRNA_full) {
-      
-      mRNA_genes$x_global_affine <- mRNA_genes$x_global_affine + heart_shift_x[mRNA_genes$embryo]
-      mRNA_genes$y_global_affine <- mRNA_genes$y_global_affine - heart_shift_y[mRNA_genes$embryo]
-      
-      boundary_polygons_sub$segmentation_vertices_x_global_affine <- boundary_polygons_sub$segmentation_vertices_x_global_affine + heart_shift_x[boundary_polygons_sub$embryo]
-      boundary_polygons_sub$segmentation_vertices_y_global_affine_neg <- boundary_polygons_sub$segmentation_vertices_y_global_affine_neg + heart_shift_y[boundary_polygons_sub$embryo]
-      
-    }
-    
-    validate(
-      need(nrow(boundary_polygons_sub) > 0,
-           "No cells are selected for subsetting, please tick at least one option for each of the embryo and z-slice categories.")
-    )
-    
-    
-    g = ggplot(boundary_polygons_sub,
-               aes(x = segmentation_vertices_x_global_affine,
-                   y = segmentation_vertices_y_global_affine_neg,
-                   group = uniqueID),
-               fill = "lightgrey",
-               size = 0.1) + 
-      geom_polygon() + 
-      
-      geom_polygon(data = subset(boundary_polygons_sub, 
-                                 celltype_mapped_refined %in% input$celltype_outline_mRNA),
-                   colour = "white",
-                   size = 0.1) +
-      
-      theme_classic() +
-      
-      facet_grid(.~embryo, labeller = labeller(embryo = embryolabeller)) +
-      guides(fill = guide_legend(title = "normalised logcounts")) +
-      coord_fixed() +
-      xlab("") +
-      ylab("") +
-      theme(plot.background = element_rect(fill = "black"),
-            panel.background = element_rect(fill = "black"),
-            strip.background = element_rect(fill = "black"),
-            strip.text = element_text(colour = "white"),
-            axis.text = element_blank(),
-            axis.ticks = element_blank(),
-            plot.title = element_text(colour = "white", hjust = 0.5)
-      ) +
-      theme(legend.background = element_rect(fill = "black"),
-            legend.text = element_text(colour = "white", face = "italic", size = 15)) +
-      NULL
-    
-    if (!input$mRNA_full) {
-      g <- g + 
-        xlim(range_x) + 
-        ylim(range_y) +
-        NULL
-    }
-    
-    g_dots = g + 
-      geom_point(aes(x = x_global_affine, y = -y_global_affine,
-                     colour = geneID), 
-                 data = mRNA_genes,
-                 size = 0.01,
-                 inherit.aes = FALSE) + 
-      scale_colour_manual(values = gene_colours_mRNA) +
-      guides(colour = guide_legend(title = "Gene",
-                                   override.aes = list(size = 10))) +
-      NULL
-    
-    return(g_dots)
-  }
-  
-  g_mRNA <- eventReactive(input$go, {
-    mRNAPlotGenerator()
-  })
-  
-  output$mRNAPlot <- renderPlot({
-    g_mRNA_val = g_mRNA()
-    return(g_mRNA_val)
-  })
-  
-  mRNARegionPlotGenerator = function() {
-    
-    polydf = data.frame(
-      embryo = rep(c("embryo1", "embryo2","embryo3"), each = 4),
-      x_global_affine = c(input$embryo1_centre_x - input$radius,
-                          input$embryo1_centre_x + input$radius,
-                          input$embryo1_centre_x + input$radius,
-                          input$embryo1_centre_x - input$radius,
-                          
-                          input$embryo2_centre_x - input$radius,
-                          input$embryo2_centre_x + input$radius,
-                          input$embryo2_centre_x + input$radius,
-                          input$embryo2_centre_x - input$radius,
-                          
-                          input$embryo3_centre_x - input$radius,
-                          input$embryo3_centre_x + input$radius,
-                          input$embryo3_centre_x + input$radius,
-                          input$embryo3_centre_x - input$radius
-      ),
-      y_global_affine = -c(input$embryo1_centre_y - input$radius,
-                           input$embryo1_centre_y - input$radius,
-                           input$embryo1_centre_y + input$radius,
-                           input$embryo1_centre_y + input$radius,
-                           
-                           input$embryo2_centre_y - input$radius,
-                           input$embryo2_centre_y - input$radius,
-                           input$embryo2_centre_y + input$radius,
-                           input$embryo2_centre_y + input$radius,
-                           
-                           input$embryo3_centre_y - input$radius,
-                           input$embryo3_centre_y - input$radius,
-                           input$embryo3_centre_y + input$radius,
-                           input$embryo3_centre_y + input$radius
-      )
-    )
-    
-    meta_sub = subset(meta, embryo %in% input$embryo_subset)
-    
-    validate(
-      need(nrow(meta_sub) > 0,
-           "No cells are selected for subsetting, please tick at least one option for each of the embryo and z-slice categories.")
-    )
-    
-    
-    g = ggplot(meta_sub,
-               aes(x = x_global_affine,
-                   y = -y_global_affine)) + 
-      geom_point(size = 0.1, 
-                 aes(colour = celltype_mapped_refined %in% input$celltype_outline_mRNA)) + 
-      
-      facet_wrap(~embryo, nrow = 1, labeller = labeller(embryo = embryolabeller)) + 
-      theme_classic() + 
-      coord_fixed() +
-      xlab("") + 
-      ylab("") +
-      ggtitle("Regional selection") +
-      scale_colour_manual(values = c("TRUE" = "red", "FALSE" = "lightgrey")) +
-      theme(legend.position = "none") +
-      theme(plot.title = element_text(size = 15, hjust = 0.5)) +
-      NULL
-    
-    if (!input$mRNA_full) {
-      g <- g + 
-        geom_polygon(data = subset(polydf, embryo %in% input$embryo_subset),
-                     aes(group = embryo),
-                     colour = "red", fill = NA, size = 1) +
-        NULL
-    }
-    
-    return(g)
-  }
-  
-  output$mRNARegionPlot <- renderPlot({
-    
-    g_mRNARegion_val = mRNARegionPlotGenerator()
-    
-    return(g_mRNARegion_val)
-  })
-  
-  output$download_mRNAPlot <- downloadHandler(
-    filename = function() {
-      return("digital_in_situ.pdf")
-    },
-    content = function(file) {
-      m1 = mRNARegionPlotGenerator()
-      m2 = g_mRNA()
-      pdf(file, paper="a4")
-      if (!input$mRNA_full) {
-        print(m1)
-      }
-      print(m2)
-      dev.off()
-    }
-  )
-  
-  output$download_mRNAPlot_gg <- downloadHandler(
-    filename = function() {
-      return("digital_in_situ_gg.Rds")
-    },
-    content = function(file) {
-      m2 = g_mRNA()
-      saveRDS(m2, file)
-    }
-  )
   
   # for Virtual Dissection section
   VirtualDissectionPlotGenerator = function() {
@@ -646,12 +470,114 @@ shinyServer(function(input, output, session) {
                       meta2$embryo %in% input$embryo_subset #& 
                       #meta2$z %in% input$z_subset
     )
+  
+    
+    if(input$embryo_same_size) {
+      meta_sub = normaliseScale(meta_sub)
+    }
+    
     
     validate(
       need(nrow(meta_sub) > 0,
            "No cells are selected for subsetting, please tick at least one option for each of the embryo and z-slice categories.")
     )
     
+    
+    if (input$virtual_colour_by == "Expression logcounts") {
+      
+      add_exprs_norm()
+      
+      pc_vals = exprs_norm[input$virtual_gene_name, meta_sub$uniqueID]
+      
+      validate(
+        need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
+      )
+      
+      pc_cols = colorRampPalette(colours)(100)[as.numeric(cut(pc_vals,100))]
+      names(pc_cols) <- names(pc_vals)
+      
+      yl = ""
+      
+    }
+    if (input$virtual_colour_by == "Imputed expression") {
+      
+      
+      add_imp()
+      
+      expr_imp = imp[input$virtual_gene_name_imputed,]
+      names(expr_imp) <- colnames(imp)
+      expr <- expr_imp[rownames(meta)]
+      
+      pc_vals = expr[meta_sub$uniqueID]
+      
+      
+      validate(
+        need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
+      )
+      
+      # Remove NA cells, as they can't be imputed
+      meta_sub = meta_sub |>
+        filter(!is.na(cellType))
+      
+      pc_vals = pc_vals[meta_sub$uniqueID]
+      
+      # Make the expression of NA cells 0 so they dont show up in front of selected cells.
+      makeZero = meta_sub |>
+        filter(is.na(cellType)) |>
+        pull(uniqueID)
+
+      pc_vals[makeZero] = 0
+      
+      pc_cols = colorRampPalette(colours)(100)[as.numeric(cut(pc_vals,100))]
+      
+      # If all expression is 0 then grey out all cells
+      if(sum(pc_vals) == 0) {
+        pc_cols = rep("grey95", length(pc_vals))
+      }
+      
+      names(pc_cols) <- names(pc_vals)
+      
+      yl = " (Imputed expression)"
+      
+    }
+    if (input$virtual_colour_by == "Mapped cell type") {
+      
+      pc_vals = as.character(meta_sub$cellType)
+      
+      validate(
+        need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
+      )
+      
+      
+      pc_cols = celltype_colours[pc_vals]
+      
+      # Add ordering of cell types, so selected cell types show up first, make sure NA is the first factor so that its always plotted behind
+      pc_vals = factor(pc_vals, levels = c(
+        NA,
+        unique(pc_vals[!is.na(pc_vals)])
+      ), exclude = NULL)
+      
+      names(pc_cols) <- rownames(meta_sub)
+      
+    } 
+    
+    if (input$virtual_colour_by == "AP axis") {
+      pc_vals = meta_sub$AP
+      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
+      names(pc_cols) <- rownames(meta_sub)
+    } 
+    
+    if (input$virtual_colour_by == "DV axis") {
+      
+      pc_vals = meta_sub$DV
+      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
+      names(pc_cols) <- rownames(meta_sub)
+    }
+    
+    # Order meta sub by pc_vals so cells of interest show up on top.
+    meta_sub = meta_sub |>
+      mutate(pc_vals = pc_vals) 
+      arrange(selected, !is.na(pc_vals), pc_vals)
     
     # Virtual dissection using Physical slice
     if (input$virtualdissect_choice == "Physical") {
@@ -676,50 +602,6 @@ shinyServer(function(input, output, session) {
                      data_id = uniqueID))
       
       g <- g + geom_point(data = meta, colour = "grey95", size = 0.8, alpha = 1, show.legend = FALSE)
-    }
-    
-    
-    if (input$virtual_colour_by == "Expression logcounts") {
-      
-      add_exprs_norm()
-      
-      pc_vals = exprs_norm[input$virtual_gene_name, meta_sub$uniqueID]
-      
-      validate(
-        need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
-      )
-      
-      pc_cols = colorRampPalette(colours)(100)[as.numeric(cut(pc_vals,100))]
-      names(pc_cols) <- names(pc_vals)
-      
-      yl = ""
-      
-    }
-    if (input$virtual_colour_by == "Mapped cell type") {
-      
-      pc_vals = as.character(meta_sub$cellType)
-      
-      validate(
-        need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
-      )
-      
-      pc_cols = celltype_colours[pc_vals]
-      names(pc_cols) <- rownames(meta_sub)
-      
-    } 
-    
-    if (input$virtual_colour_by == "AP axis") {
-      
-      pc_vals = meta_sub$AP
-      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
-      names(pc_cols) <- rownames(meta_sub)
-    } 
-    
-    if (input$virtual_colour_by == "DV axis") {
-      
-      pc_vals = meta_sub$DV
-      pc_cols = colorRampPalette(APDV_colours)(100)[as.numeric(cut(pc_vals,100))]
-      names(pc_cols) <- rownames(meta_sub)
     }
     
     
@@ -757,7 +639,8 @@ shinyServer(function(input, output, session) {
   }
   
   updateVirtualDissection = reactive({
-    paste(input$embryo_subset, 
+    paste(input$embryo_same_size,
+          input$embryo_subset, 
           input$virtualdissect_choice,
           input$add,
           input$add2,
@@ -770,15 +653,13 @@ shinyServer(function(input, output, session) {
           input$addCT2,
           input$removeCT,
           input$removeAllButCT,
-          input$addLogical,
-          input$addLogical2,
-          input$removeLogical,
           input$preselected,
           input$add_pre,
           input$add_pre2,
           input$remove_pre,
           input$virtual_colour_by,
-          input$virtual_gene_name)
+          input$virtual_gene_name,
+          input$virtual_gene_name_imputed)
   })
   
   VirtualDissectionPlot = eventReactive(updateVirtualDissection(),
@@ -930,67 +811,6 @@ shinyServer(function(input, output, session) {
   
   ######### CT end
   
-  
-  
-  ###### Logical start
-  
-  addLogicalGenerator = function() {
-    meta2 <- isolate(values$meta)
-    selectedUniqueIDs = subsetCellsLogical(input$logical, input = input)
-    meta2[meta2$uniqueID %in% selectedUniqueIDs, "selected"] <- "Group A"
-    values$meta <<- meta2
-    showNotification("Logical statement selected cells added to Group A!")
-    return(meta)
-  }
-  
-  observeEvent(input$addLogical, {
-    
-    add_exprs()
-    add_imp()
-    
-    addLogicalGenerator()
-  })
-  
-  addLogical2Generator = function() {
-    meta2 <- isolate(values$meta)
-    selectedUniqueIDs = subsetCellsLogical(input$logical, input = input)
-    meta2[meta2$uniqueID %in% selectedUniqueIDs, "selected"] <- "Group B"
-    values$meta <<- meta2
-    showNotification("Logical statement selected cells added to Group B!")
-    return(meta)
-  }
-  
-  observeEvent(input$addLogical2, {
-    
-    add_exprs()
-    add_imp()
-    
-    addLogical2Generator()
-  })
-  
-  removeLogicalGenerator = function() {
-    
-    add_exprs()
-    add_imp()
-    
-    meta2 <- isolate(values$meta)
-    selectedUniqueIDs = subsetCellsLogical(input$logical, input = input)        
-    meta2[meta2$uniqueID %in% selectedUniqueIDs, "selected"] <- "Unselected"
-    values$meta <<- meta2
-    showNotification("Logical statement selected cells removed from either group!")
-    return(meta)
-  }
-  
-  observeEvent(input$removeLogical, {
-    removeLogicalGenerator()
-  })
-  
-  ######### Logical end
-  
-  
-  
-  
-  
   addPreselectedGenerator = function() {
     selectedUniqueIDs = do.call(c,
                                 sapply(input$preselected$datapath, 
@@ -1121,7 +941,7 @@ shinyServer(function(input, output, session) {
       gList[[gname]] + ylab(paste0("Number of ", gname, " cells"))
     }, simplify = FALSE)
     
-    wrap_plots(gList_named, ncol = 1)
+    wrap_plots(gList_named, nrow = 1)
   }
   
   VirtualDissectionBarPlot = eventReactive(updateVirtualDissection(),
@@ -1172,10 +992,9 @@ shinyServer(function(input, output, session) {
            "Need cells assigned to both Group A and Group B to be able to display MA-plot")
     )
     
+    
+    # Log counts MA vals
     add_exprs()
-    
-    
-    MA_df_imp = NULL
     
     
     A_val = rowMeans(exprs_counts[, c(virtualDissectionCells, virtualDissectionCells_not)])
@@ -1189,10 +1008,38 @@ shinyServer(function(input, output, session) {
       type = "seqFISH"
     )
     
+    
+    # Imputed MA vals
+    add_imp()
+    
+    # Need to filter NA cells for imputed data
+    na_cells = meta2 |> 
+      filter(is.na(cellType)) |> 
+      pull(uniqueID)
+    
+    virtualDissectionCells_Imp = virtualDissectionCells[!(virtualDissectionCells%in% na_cells)]
+    virtualDissectionCells_not_Imp = virtualDissectionCells_not[!(virtualDissectionCells_not%in% na_cells)]
+    
+    A_val_Imp = rowMeans(imp[, c(virtualDissectionCells_Imp, virtualDissectionCells_not_Imp)])
+    M_val_Imp = rowMeans(imp[, virtualDissectionCells_Imp]) - rowMeans(imp[, virtualDissectionCells_not_Imp])
+    
+    
+    MA_df_imp = data.frame(
+      A_val = A_val_Imp,
+      M_val = M_val_Imp,
+      gene = rownames(imp),
+      M_rank = rank(-M_val_Imp),
+      M_rank_bottom = rank(M_val_Imp),
+      type = "Imputed"
+    )
+    
+    # Combine logcounts and imputed MA plots
     MA_df = rbind(MA_df_seq, MA_df_imp)
     MA_df$type <- factor(MA_df$type, levels = c("seqFISH", "Imputed"))
     
     
+    
+    # Plot
     g = ggplot(MA_df, aes(x = A_val, y = M_val, label = gene, tooltip = gene, data_id = gene)) + 
       geom_point_interactive(colour = "grey") + 
       geom_hline(yintercept = 0) + 
@@ -1214,18 +1061,18 @@ shinyServer(function(input, output, session) {
                            labels = c("Higher in Group A", "Higher in Group B"),
                            guide = "legend") +
       theme(legend.position = "none") +
-      theme(legend.text = element_text(size = 15)) +
+      theme(legend.text = element_text(size = 10)) +
       
       guides(
         colour = guide_legend(
           title = "",
           override.aes = aes(label = "X",
-                             size = 10)
+                             size = 8)
         )) +
       
-      theme(axis.title.y = element_text(size = 15)) +
-      theme(axis.title.x = element_text(size = 15)) +
-      facet_grid(type~.) +
+      theme(axis.title.y = element_text(size = 10)) +
+      theme(axis.title.x = element_text(size = 10)) +
+      facet_wrap(~type, nrow = 1) +
       NULL
     g
     
@@ -1239,7 +1086,6 @@ shinyServer(function(input, output, session) {
   output$VirtualDissectionMAPlot <- renderGirafe({
     VirtualDissectionMAPlot = VirtualDissectionMAPlot()
     girafe(code = print(VirtualDissectionMAPlot),
-           height_svg = 10,
            options = list(
              opts_hover(css = "fill:#000000;stroke:black;cursor:pointer;", reactive = TRUE),
              opts_selection(

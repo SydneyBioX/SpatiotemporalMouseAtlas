@@ -51,7 +51,7 @@ meta$cellType = meta$refined_annotation
 celltypes = sort(unique(meta$refined_annotation))
 
 meta$uniqueID = rownames(meta)
-meta$selected = factor("Unselected", levels = c("Group A", "Group B", "Unselected"))
+meta$selected = factor("Unselected", levels = c("Unselected", "Group B", "Group A"))
 
 
 genes = sort(rownames(seqFISH_spe))
@@ -75,36 +75,6 @@ meta$UMAP2 = meta$UMAP_2
 
 ##################
 
-subsetCellsLogical = function(textToParse, input) {
-    
-    require(reshape)
-    # meta, exprs, rnames, and imp are taken from the global environment
-    # example inputs, remember quotes need to be escaped
-    # textToParse = "Tbx18 < 0.5 & Shh > 0.5"
-    # textToParse = "rank(x) < 10"
-    # textToParse = "cluster == 4"
-    # textToParse = "uniqueID %in% c(\"embryo3_Pos3_cell348_z2\")"
-    
-    # check if any are viable gene names
-    textSplit = strsplit(textToParse, "[ \t\r\n]|=|<|>|!|\\(|\\)|&")[[1]]
-    genesParse = intersect(textSplit, union(rnames, rownames(exprs)))
-    print(paste(c("subsetting according to these genes:", genesParse), collapse = " "))
-    
-    # append these genes to the colData, prioritise measured over imputed
-    colsToAddSeqFISH = as.matrix(exprs[intersect(genesParse, rownames(exprs)),,drop = FALSE])
-    colsToAddImputed = as.matrix(imp[intersect(setdiff(genesParse, rownames(exprs)), rnames),,drop = FALSE])
-    dfParse = cbind(meta, t(colsToAddSeqFISH), t(colsToAddImputed))
-    
-    dfParse_sub = subset(dfParse, embryo %in% input$embryo_subset)
-    
-    selectedCells <- tryCatch(rownames(subset(dfParse_sub, eval(parse(text = textToParse)))), error = function(e) e)
-    
-    if (any(class(selectedCells) == "error")) {
-        showNotification("Error in logical statement, e.g. gene not found, please try again...")
-        return(NULL)
-    }
-    return(selectedCells)
-}
 
 # NOTE: Switched the labels to match the paper.
 embryolabeller = function(string) {
