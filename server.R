@@ -576,7 +576,7 @@ shinyServer(function(input, output, session) {
     
     # Order meta sub by pc_vals so cells of interest show up on top.
     meta_sub = meta_sub |>
-      mutate(pc_vals = pc_vals) 
+      mutate(pc_vals = pc_vals) |> 
       arrange(selected, !is.na(pc_vals), pc_vals)
     
     # Virtual dissection using Physical slice
