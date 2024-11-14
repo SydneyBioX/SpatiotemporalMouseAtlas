@@ -340,7 +340,7 @@ shinyUI(fluidPage(
                                              withSpinner(color="#0dc5c1"),
                                            
                                            girafeOutput("VirtualDissectionMAPlot",
-                                                        height = "700px",
+                                                        height = "100%",
                                                         width = "100%") %>% 
                                              withSpinner(color="#0dc5c1")
                                     )
