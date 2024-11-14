@@ -50,7 +50,6 @@ shinyUI(fluidPage(
         column(11,
 
                tabsetPanel(id = "tabs",
-                           selected = "Virtual dissection", ## REMOVE
                            tabPanel("Landing page", fluid = TRUE,
                                     includeMarkdown("README.md")
                            ),
