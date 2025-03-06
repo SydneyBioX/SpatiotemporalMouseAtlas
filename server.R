@@ -52,10 +52,12 @@ shinyServer(function(input, output, session) {
   
   normaliseScale = function(data) {
     data = data |> 
+      rownames_to_column("cellID") |> 
       group_by(embryo) |> 
       mutate(dim1 = norm(dim1), 
              dim2 = 2*norm(dim2)) |> 
-      ungroup()
+      ungroup() |> 
+      column_to_rownames("cellID")
     
     return(data)
   }
@@ -76,13 +78,11 @@ shinyServer(function(input, output, session) {
 
   # Generates spatial plot
   spatialPlotGenerator = function() {
-    
     meta_sub = subset(
       meta,
       embryo %in% input$embryo_subset #& 
       # z %in% input$z_subset
     )
-    
     
     if(input$embryo_same_size) {
       meta_sub = normaliseScale(meta_sub)
@@ -164,7 +164,7 @@ shinyServer(function(input, output, session) {
         validate(
           need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
         )
-        
+      
         # Set the expression of subsetted cells to 0, so they don't show up in front, this wont affect violin plot as it uses separate data.frame
         pc_vals[rownames(meta_sub)[!meta_sub$cellType %in% celltype_subset]] = 0
         
@@ -207,10 +207,10 @@ shinyServer(function(input, output, session) {
     }
 
     # Order meta sub by pc_vals so cells of interest show up on top.
+  
     meta_sub = meta_sub |>
       mutate(pc_vals = pc_vals) |>
       arrange(pc_vals)
-
     
     g_base = meta_sub |> 
       ggplot(
@@ -243,21 +243,22 @@ shinyServer(function(input, output, session) {
       theme(axis.title.y = element_blank()) +
       theme(axis.title.x = element_text(face = "italic")) +
       theme(axis.ticks = element_blank()) +
-      theme(strip.text.y = element_blank()) +
+      #theme(strip.text.y = element_blank()) +
       theme(strip.background.x = element_rect(colour = "white")) +
+      theme(strip.background.y = element_rect(colour = "white")) +
       NULL
+  
     
-    if (length(input$embryo_subset) > 1) {
-
+    if (input$show_zstack) {
+      g <- g + facet_grid(embryo ~ dim3 , labeller = labeller(embryo = embryolabeller))
+    } else{
       g <- g +
-        facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
-        NULL
-      
-    } else {
-      g <- g +
-        facet_grid(~embryo, labeller = labeller(embryo = embryolabeller)) +
+        facet_grid(~ embryo, labeller = labeller(embryo = embryolabeller)) +
         NULL
     }
+    
+    
+    
     
     g_leg = NULL
     
@@ -586,8 +587,17 @@ shinyServer(function(input, output, session) {
                      y = dim2,
                      # tooltip = uniqueID,
                      tooltip = cellType,
-                     data_id = uniqueID)) + 
-        facet_grid(~embryo, labeller = labeller(embryo = embryolabeller))
+                     data_id = uniqueID)) 
+      
+      
+      
+      if (input$show_zstack) {
+        g <- g + facet_grid(embryo ~ dim3 , labeller = labeller(embryo = embryolabeller))
+      } else{
+        g <- g +
+          facet_grid(~ embryo, labeller = labeller(embryo = embryolabeller))
+      }
+      
       
     }
     
@@ -659,7 +669,8 @@ shinyServer(function(input, output, session) {
           input$remove_pre,
           input$virtual_colour_by,
           input$virtual_gene_name,
-          input$virtual_gene_name_imputed)
+          input$virtual_gene_name_imputed,
+          input$show_zstack)
   })
   
   VirtualDissectionPlot = eventReactive(updateVirtualDissection(),
@@ -1190,6 +1201,11 @@ shinyServer(function(input, output, session) {
         theme_classic() +  
         labs(x = paste(input$ap_or_dv, "Axis"),
              y = paste("Gene:", geneName))
+      
+      if(input$ap_or_dv == "AP") {
+        p = p +
+          scale_x_reverse()
+      }
       
       # Convert ggplot object to plotly
       return(ggplotly(p, tooltip = "text"))

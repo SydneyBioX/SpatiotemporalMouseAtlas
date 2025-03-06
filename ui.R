@@ -25,10 +25,15 @@ shinyUI(fluidPage(
                                   "Subset by embryo:",
                                   choiceNames = c(paste0("Embryo ", 1:7, c(rep(" (E6.5)", 2), rep(" (E7.5)", 2), rep(" (E8.5)", 3)))),
                                   choiceValues = c(paste0("embryo", 7:1)),
-                                  selected = "embryo4"),
+                                  selected = c("embryo4")),
                
                checkboxInput("embryo_same_size",
                              "Make embryos same size",
+                             value = FALSE),
+               
+            
+               checkboxInput("show_zstack",
+                             "Facet Z-stack",
                              value = FALSE),
                
                
@@ -87,6 +92,7 @@ shinyUI(fluidPage(
                                                        max = 1.5,
                                                        value = 0.3,
                                                        step = 0.05),
+                                           
 
                                     ),
 
@@ -375,8 +381,6 @@ shinyUI(fluidPage(
                                                           selected = c("T"),
                                                           options= list(maxOptions = length(genes_imp)),
                                                           multiple = TRUE),
-                                           
-                                           
                                            
                                            ),
                                     

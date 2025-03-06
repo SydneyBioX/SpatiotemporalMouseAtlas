@@ -53,11 +53,12 @@ celltypes = sort(unique(meta$refined_annotation))
 meta$uniqueID = rownames(meta)
 meta$selected = factor("Unselected", levels = c("Unselected", "Group B", "Group A"))
 
-
+meta$embryo = factor(meta$embryo, levels = c("embryo7", "embryo6", "embryo5", "embryo4", "embryo3", "embryo2", "embryo1"))
 genes = sort(rownames(seqFISH_spe))
 embryos = paste0("embryo", 1:7)
 # zvals = c(2,5)
 
+meta$dim3 = round(meta$dim3)
 embryo_coords_range_x = range(meta$dim1, na.rm = TRUE)
 embryo_coords_range_y = range(meta$dim2, na.rm = TRUE)
 
