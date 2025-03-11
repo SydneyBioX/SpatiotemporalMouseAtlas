@@ -50,6 +50,8 @@ meta = seqFISH_spe %>%
 meta$cellType = meta$refined_annotation
 celltypes = sort(unique(meta$refined_annotation))
 
+tissuelayers = sort(unique(meta$tissue_layer))
+
 meta$uniqueID = rownames(meta)
 meta$selected = factor("Unselected", levels = c("Unselected", "Group B", "Group A"))
 

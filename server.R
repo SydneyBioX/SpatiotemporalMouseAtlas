@@ -104,6 +104,12 @@ shinyServer(function(input, output, session) {
         celltype_subset_imp = input$celltype_subset_imp
       }
       
+      if(input$tissuelayer_subset_all_SPImputed) {
+        tissuelayer_subset_imp = tissuelayers
+      } else {
+        tissuelayer_subset_imp = input$tissuelayer_subset_imp
+      }
+      
       add_imp()
       
       gene_name_impGenerator()
@@ -132,6 +138,7 @@ shinyServer(function(input, output, session) {
       # Make the expression of NA cells 0 so they dont show up in front of selected cells.
       makeZero = meta_sub |> 
         filter(!cellType %in% celltype_subset_imp) |> 
+        filter(!tissuelayer %in% tissuelayer_subset_imp) |>
         pull(uniqueID)
       
       pc_vals[makeZero] = 0
@@ -155,6 +162,12 @@ shinyServer(function(input, output, session) {
         celltype_subset = input$celltype_subset
       }
       
+      if(input$tissuelayer_subset_all_SP) {
+        tissuelayer_subset = tissuelayers
+      } else {
+        tissuelayer_subset = input$tissuelayer_subset
+      }
+      
       if (input$colour_by == "Expression logcounts") {
         
         add_exprs_norm()
@@ -165,6 +178,9 @@ shinyServer(function(input, output, session) {
           need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
         )
       
+        # Set the expression of subsetted cells to 0, so they don't show up in front, this wont affect violin plot as it uses separate data.frame
+        pc_vals[rownames(meta_sub)[!meta_sub$tissue_layer %in% tissuelayer_subset]] = 0
+        
         # Set the expression of subsetted cells to 0, so they don't show up in front, this wont affect violin plot as it uses separate data.frame
         pc_vals[rownames(meta_sub)[!meta_sub$cellType %in% celltype_subset]] = 0
         
@@ -184,6 +200,7 @@ shinyServer(function(input, output, session) {
 
         
         pc_vals = as.character(meta_sub$cellType)
+        tl_vals = as.character(meta_sub$tissue_layer)
         
         validate(
           need(length(pc_vals) > 0, "No cells are selected for subsetting, please tick at least one option for each of the embryo, z-slice and mapped cell type categories.")
@@ -192,6 +209,7 @@ shinyServer(function(input, output, session) {
         
         pc_cols = celltype_colours[pc_vals]
         pc_cols[!pc_vals %in% celltype_subset] = "grey95"
+        pc_cols[!tl_vals %in% tissuelayer_subset] = "grey95"
         
         # Add ordering of cell types, so selected cell types show up first, make sure NA is the first factor so that its always plotted behind
         pc_vals = factor(pc_vals, levels = c(
@@ -1171,10 +1189,17 @@ shinyServer(function(input, output, session) {
       celltype_subset = input$apdv_plot_celltype
     }
     
+    if(input$tissuelayer_subset_all_apdv) {
+      tissuelayer_subset = tissuelayers
+    } else {
+      tissuelayer_subset = input$apdv_plot_tissuelayer
+    }
+    
     # Filter cell type and embryo
     meta_sub = meta %>% 
       filter(embryo %in% input$embryo_subset) %>% 
-      filter(cellType %in% celltype_subset)
+      filter(cellType %in% celltype_subset) %>%
+      filter(tissuelayer %in% tissuelayer_subset)
     
     
     # Add gene expression 

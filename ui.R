@@ -79,10 +79,20 @@ shinyUI(fluidPage(
                                            checkboxInput("celltype_subset_all_SP",
                                                          "Show all cell types",
                                                          value = TRUE),
+                                           
+                                           checkboxInput("tissuelayer_subset_all_SP",
+                                                         "Show all tissue layers",
+                                                         value = TRUE),
 
                                            selectizeInput("celltype_subset",
                                                           "Subset by cell type:",
                                                           choices = celltypes,
+                                                          selected = NULL,
+                                                          multiple = TRUE),
+                                           
+                                           selectizeInput("tissuelayer_subset",
+                                                          "Subset by tissue layer:",
+                                                          choices = tissuelayers,
                                                           selected = NULL,
                                                           multiple = TRUE),
 
@@ -135,10 +145,20 @@ shinyUI(fluidPage(
                                            checkboxInput("celltype_subset_all_SPImputed",
                                                          "Show all cell types",
                                                          value = TRUE),
+                                           
+                                           checkboxInput("tissuelayer_subset_all_SPImputed",
+                                                         "Show all tissue layers",
+                                                         value = TRUE),
 
                                            selectizeInput("celltype_subset_imp",
                                                           "Subset by cell type:",
                                                           choices = celltypes,
+                                                          selected = NULL,
+                                                          multiple = TRUE),
+                                           
+                                           selectizeInput("tissuelayer_subset_imp",
+                                                          "Subset by tissue layer:",
+                                                          choices = tissuelayers,
                                                           selected = NULL,
                                                           multiple = TRUE),
                                            
@@ -369,11 +389,21 @@ shinyUI(fluidPage(
                                                          "Show all cell types",
                                                          value = TRUE),
                                            
+                                           checkboxInput("tissuelayer_subset_all_apdv",
+                                                         "Show all tissue layers",
+                                                         value = TRUE),
+                                           
                                            selectizeInput("apdv_plot_celltype",
                                                        "Subset by cell type:",
                                                        choices = celltypes,
                                                        selected = NULL,
                                                        multiple = TRUE),
+                                           
+                                           selectizeInput("apdv_plot_tissuelayer",
+                                                          "Subset by tissue layer:",
+                                                          choices = tissuelayers,
+                                                          selected = NULL,
+                                                          multiple = TRUE),
                                            
                                            selectizeInput("apdv_plot_genename",
                                                           "Gene name:",

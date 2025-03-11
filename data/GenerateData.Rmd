@@ -54,9 +54,25 @@ seqFishSPE = readRDS("seqFISH_spe.Rds")
 # Refined SeqFISH data <- this is the way
 
 # load updated metadata
-metadata = readRDS("FINAL_REFINED_ANNOTATIONS_1_10_2024.Rds")
+# metadata = readRDS("FINAL_REFINED_ANNOTATIONS_1_10_2024.Rds")
+metadata = readRDS("1C_meta_POST_REVISION.Rds")
 cellTypeRefined = metadata[,"refined_annotation", drop = FALSE] %>%
   rownames_to_column("cellID")
+
+# tissue layer
+tissueLayer = metadata[,"tissue_layer", drop = FALSE] %>%
+  rownames_to_column("cellID")
+
+# joint clusters pass qc
+jointClustersPassQC = metadata[,"joint_clusters_pass_QC", drop = FALSE] %>%
+  rownames_to_column("cellID")
+
+
+# stage alginemnt pass qC
+stageAlignmentPassQC = metadata[,"stage_alignment_pass_QC", drop = FALSE] %>%
+  rownames_to_column("cellID")
+
+
 
 # No need to show. seqfish clustering on its own, IGNORE for now
 # if (FALSE) {
@@ -73,7 +89,8 @@ apdv = readRDS("AP_DV.Rds") %>%
   rownames_to_column("cellID")
 
 # Load UMAPs from the joint object
-joint_meta = readRDS("seqFISH_scRNA_metadata_4_7_2024.rds")[,c("UMAP_1","UMAP_2")] %>%
+# joint_meta = readRDS("seqFISH_scRNA_metadata_4_7_2024.rds")[,c("UMAP_1","UMAP_2")] %>%
+joint_meta = metadata[,c("UMAP_1","UMAP_2")] %>%
   rownames_to_column("cellID")
 ```
 
@@ -88,6 +105,9 @@ colDat = seqFishSPE %>%
 finalColDat = colDat %>% 
   left_join(cellTypeExtended, join_by("cellID")) %>% 
   left_join(cellTypeRefined, join_by("cellID")) %>%
+  left_join(tissueLayer, join_by("cellID")) %>%
+  left_join(stageAlignmentPassQC, join_by("cellID")) %>%
+  left_join(jointClustersPassQC, join_by("cellID")) %>%
   left_join(joint_meta, join_by("cellID")) %>%
   left_join(apdv, join_by("cellID")) %>% 
   column_to_rownames("cellID") %>%
